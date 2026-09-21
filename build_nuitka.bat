@@ -25,6 +25,7 @@ python -m nuitka ^
     --windows-product-version=1.0.0.0 ^
     --enable-plugin=tk-inter ^
     --include-data-dir=i18n=i18n ^
+    --include-data-dir=assets=assets ^
     --output-filename=AutoClicker.exe ^
     main.py
 

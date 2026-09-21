@@ -14,11 +14,19 @@ class TrayManager:
         self.on_toggle_hud: Optional[Callable] = None
         
     def _create_icon_image(self):
+        import os
+        icon_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'assets', 'icon.png')
+        if os.path.exists(icon_path):
+            try:
+                self.image = Image.open(icon_path).resize((64, 64), Image.Resampling.LANCZOS)
+                return
+            except Exception:
+                pass
         width = 64
         height = 64
         self.image = Image.new('RGBA', (width, height), (0, 0, 0, 0))
         draw = ImageDraw.Draw(self.image)
-        draw.ellipse((8, 8, 56, 56), fill="#3B8ED0")
+        draw.ellipse((8, 8, 56, 56), fill="#10B981")
         
     def start(self):
         menu = pystray.Menu(

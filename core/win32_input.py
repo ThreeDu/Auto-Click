@@ -65,13 +65,14 @@ class POINT(ctypes.Structure):
         ("y", wintypes.LONG)
     ]
 
-def send_click(button: str = 'left', click_type: str = 'single') -> None:
+def send_click(button: str = 'left', click_type: str = 'single', hold_ms: int = 0) -> None:
     """
     Sends mouse down and up events.
     
     Args:
         button: 'left', 'right', or 'middle'
         click_type: 'single', 'double', or 'triple'
+        hold_ms: Milliseconds to hold button down before release (default 0 for instant CPS, >0 for macro reliability)
     """
     down_flag = MOUSEEVENTF_LEFTDOWN
     up_flag = MOUSEEVENTF_LEFTUP
@@ -89,25 +90,27 @@ def send_click(button: str = 'left', click_type: str = 'single') -> None:
     elif click_type == 'triple':
         num_clicks = 3
         
-    inputs = []
-    
-    for _ in range(num_clicks):
-        # Mouse down
+    cbSize = ctypes.sizeof(INPUT)
+
+    for i in range(num_clicks):
         down_input = INPUT(type=INPUT_MOUSE)
         down_input.union.mi = MOUSEINPUT(0, 0, 0, down_flag, 0, None)
-        inputs.append(down_input)
-        
-        # Mouse up
+
         up_input = INPUT(type=INPUT_MOUSE)
         up_input.union.mi = MOUSEINPUT(0, 0, 0, up_flag, 0, None)
-        inputs.append(up_input)
 
-    # Use SendInput
-    nInputs = len(inputs)
-    pInputs = (INPUT * nInputs)(*inputs)
-    cbSize = ctypes.sizeof(INPUT)
-    
-    ctypes.windll.user32.SendInput(nInputs, pInputs, cbSize)
+        if hold_ms > 0:
+            pDown = (INPUT * 1)(down_input)
+            ctypes.windll.user32.SendInput(1, pDown, cbSize)
+            time.sleep(hold_ms / 1000.0)
+            pUp = (INPUT * 1)(up_input)
+            ctypes.windll.user32.SendInput(1, pUp, cbSize)
+        else:
+            pBoth = (INPUT * 2)(down_input, up_input)
+            ctypes.windll.user32.SendInput(2, pBoth, cbSize)
+
+        if i < num_clicks - 1:
+            time.sleep(0.02)
 
 def move_cursor(x: int, y: int) -> None:
     """

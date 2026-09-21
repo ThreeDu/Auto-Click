@@ -32,6 +32,7 @@ class MacroCard(ctk.CTkFrame):
 
         self.is_recording = False
         self.is_running = False
+        self.hotkey_display = "F7"
         self.step_rows = []
 
         self._build_ui()
@@ -182,10 +183,25 @@ class MacroCard(ctk.CTkFrame):
         )
         rb_infinite.pack(side="left")
 
+        # Restore Cursor Checkbox
+        self.restore_cursor_var = ctk.BooleanVar(value=False)
+        self.restore_cursor_cb = ctk.CTkCheckBox(
+            loop_frame,
+            text=t('restore_cursor'),
+            variable=self.restore_cursor_var,
+            font=(FONT_FAMILY, FONT_SIZE_SM),
+            text_color=TEXT_MAIN,
+            fg_color=ACCENT_AMBER,
+            hover_color=ACCENT_AMBER,
+            checkbox_width=16,
+            checkbox_height=16
+        )
+        self.restore_cursor_cb.pack(side="right")
+
         # Run Button
         self.btn_run_stop = ctk.CTkButton(
             self,
-            text=f"▶  {t('run_macro').upper()} (F7)",
+            text=f"▶  {t('run_macro').upper()} ({self.hotkey_display})",
             height=38,
             font=(FONT_FAMILY, FONT_SIZE_MD, "bold"),
             fg_color=ACCENT_PRIMARY,
@@ -310,6 +326,14 @@ class MacroCard(ctk.CTkFrame):
         self._update_row_state(row_frame)
         self._update_stats()
 
+    def update_last_step_delay(self, delay_ms: int):
+        """Updates the delay of the most recently added step (used during recording)."""
+        if self.step_rows:
+            last_row = self.step_rows[-1]
+            last_row['delay_entry'].delete(0, 'end')
+            last_row['delay_entry'].insert(0, str(max(1, delay_ms)))
+            self._update_stats()
+
     def _update_row_state(self, row_frame):
         for row in self.step_rows:
             if row['frame'] == row_frame:
@@ -414,19 +438,32 @@ class MacroCard(ctk.CTkFrame):
         except ValueError:
             return 1
 
+    def set_hotkey(self, hotkey: str):
+        self.hotkey_display = hotkey.upper().strip('<>')
+        self._update_run_button_text()
+
     def set_running(self, is_running: bool):
         self.is_running = is_running
-        if is_running:
+        self._update_run_button_text()
+
+    def _update_run_button_text(self):
+        if self.is_running:
             self.btn_run_stop.configure(
-                text=f"■  {t('stop_macro').upper()} (F7)",
+                text=f"■  {t('stop_macro').upper()} ({self.hotkey_display})",
                 fg_color=ACCENT_ALERT,
                 hover_color=ACCENT_ALERT_HOVER,
                 text_color=TEXT_MAIN
             )
         else:
             self.btn_run_stop.configure(
-                text=f"▶  {t('run_macro').upper()} (F7)",
+                text=f"▶  {t('run_macro').upper()} ({self.hotkey_display})",
                 fg_color=ACCENT_PRIMARY,
                 hover_color=ACCENT_PRIMARY_HOVER,
                 text_color="#042F2E"
             )
+
+    def is_restore_cursor(self) -> bool:
+        return self.restore_cursor_var.get()
+
+    def set_restore_cursor(self, value: bool) -> None:
+        self.restore_cursor_var.set(value)

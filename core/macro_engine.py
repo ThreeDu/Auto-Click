@@ -5,7 +5,7 @@ import threading
 from dataclasses import dataclass
 from typing import Optional, Callable
 
-from .win32_input import send_click, move_cursor
+from .win32_input import send_click, move_cursor, get_cursor_pos
 from .timer import setup_timer_resolution, restore_timer_resolution, high_precision_sleep
 
 @dataclass
@@ -23,6 +23,7 @@ class MacroEngine:
         
         self.steps: list[MacroStep] = []
         self.repeat_count = 0  # 0 = infinite
+        self.restore_cursor = False
         
         self.total_iterations = 0
         
@@ -65,14 +66,27 @@ class MacroEngine:
                         self.on_step_update(i + 1, total_steps)
                         
                     if step.action == 'move':
-                        move_cursor(step.x, step.y)
+                        if not self.restore_cursor:
+                            move_cursor(step.x, step.y)
                     elif step.action.startswith('click_'):
                         button = step.action.split('_')[1]
-                        move_cursor(step.x, step.y)
-                        send_click(button=button, click_type='single')
+                        if self.restore_cursor:
+                            orig_x, orig_y = get_cursor_pos()
+                            move_cursor(step.x, step.y)
+                            high_precision_sleep(0.005, stop_event=self._stop_event)
+                            send_click(button=button, click_type='single', hold_ms=12)
+                            high_precision_sleep(0.015, stop_event=self._stop_event)
+                            move_cursor(orig_x, orig_y)
+                        else:
+                            move_cursor(step.x, step.y)
+                            high_precision_sleep(0.005, stop_event=self._stop_event)
+                            send_click(button=button, click_type='single', hold_ms=12)
                         
                     if step.delay_ms > 0:
                         high_precision_sleep(step.delay_ms / 1000.0, stop_event=self._stop_event)
+                    elif i == total_steps - 1:
+                        # Safety settle time for the last step so it is not cut off by loop exit/repeat
+                        high_precision_sleep(0.025, stop_event=self._stop_event)
                         
                 self.total_iterations += 1
                 if self.repeat_count > 0 and self.total_iterations >= self.repeat_count:

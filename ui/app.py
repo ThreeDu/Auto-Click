@@ -131,6 +131,15 @@ class AutoClickerApp(ctk.CTk):
         if self.config.always_on_top:
             self.attributes("-topmost", True)
 
+        # Set app window and taskbar icon
+        app_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        icon_path = os.path.join(app_dir, 'assets', 'icon.ico')
+        if os.path.exists(icon_path):
+            try:
+                self.iconbitmap(icon_path)
+            except Exception:
+                pass
+
         self.protocol("WM_DELETE_WINDOW", self._on_close)
 
     def _setup_theme(self):
@@ -166,6 +175,17 @@ class AutoClickerApp(ctk.CTk):
 
         tab_settings = self.tabview.add("SETTINGS")
         self._build_settings_tab(tab_settings)
+
+        def _sync_restore_from_location():
+            val = self.location_card.is_restore_cursor()
+            self.macro_card.set_restore_cursor(val)
+
+        def _sync_restore_from_macro():
+            val = self.macro_card.is_restore_cursor()
+            self.location_card.set_restore_cursor(val)
+
+        self.location_card.restore_cursor_cb.configure(command=_sync_restore_from_location)
+        self.macro_card.restore_cursor_cb.configure(command=_sync_restore_from_macro)
 
         # 3. Bottom Unified Control Dock
         self._build_bottom_bar()
@@ -267,6 +287,7 @@ class AutoClickerApp(ctk.CTk):
 
         self.macro_card = MacroCard(parent)
         self.macro_card.pack(fill="both", expand=True, padx=2, pady=2)
+        self.macro_card.set_hotkey(self.config.macro_hotkey)
         self.macro_card.on_run_macro = self._start_macro
         self.macro_card.on_stop_macro = self._stop_macro
         self.macro_card.on_record_start = self._start_recording
@@ -358,6 +379,7 @@ class AutoClickerApp(ctk.CTk):
             corner_radius=RADIUS_CONTROL, text_color=ACCENT_AMBER, justify="center"
         )
         self.hotkey_entry.insert(0, self.config.hotkey.upper().strip('<>'))
+        self.hotkey_entry.configure(state="readonly")
         self.hotkey_entry.pack(side="left", padx=(0, 4))
 
         self.bind_click_btn = ctk.CTkButton(
@@ -382,6 +404,7 @@ class AutoClickerApp(ctk.CTk):
             corner_radius=RADIUS_CONTROL, text_color=ACCENT_AMBER, justify="center"
         )
         self.macro_hotkey_entry.insert(0, self.config.macro_hotkey.upper().strip('<>'))
+        self.macro_hotkey_entry.configure(state="readonly")
         self.macro_hotkey_entry.pack(side="left", padx=(0, 4))
 
         self.bind_macro_btn = ctk.CTkButton(
@@ -401,13 +424,25 @@ class AutoClickerApp(ctk.CTk):
         )
         self.hk_status_label.pack(fill="x", padx=10, pady=(2, 4))
 
+        btn_row = ctk.CTkFrame(hk_card, fg_color="transparent")
+        btn_row.pack(fill="x", padx=10, pady=(0, 8))
+        btn_row.grid_columnconfigure((0, 1), weight=1)
+
+        self.reset_hk_btn = ctk.CTkButton(
+            btn_row, text=t('reset_hotkeys').upper(), height=28, font=(FONT_FAMILY, 10, "bold"),
+            fg_color="transparent", hover_color=BG_HOVER, text_color=TEXT_MUTED,
+            border_color=BORDER_SUBTLE, border_width=1, corner_radius=RADIUS_CONTROL,
+            command=self._reset_default_hotkeys
+        )
+        self.reset_hk_btn.grid(row=0, column=0, padx=(0, 4), sticky="ew")
+
         apply_btn = ctk.CTkButton(
-            hk_card, text="APPLY KEYBINDS", height=28, font=(FONT_FAMILY, 11, "bold"),
+            btn_row, text="APPLY KEYBINDS", height=28, font=(FONT_FAMILY, 11, "bold"),
             fg_color=BG_PANEL_ALT, hover_color=BG_HOVER, text_color=TEXT_MAIN,
             border_color=BORDER_SUBTLE, border_width=1, corner_radius=RADIUS_CONTROL,
             command=self._apply_hotkey_settings
         )
-        apply_btn.pack(fill="x", padx=10, pady=(0, 8))
+        apply_btn.grid(row=0, column=1, padx=(4, 0), sticky="ew")
 
     def _build_bottom_bar(self):
         """Unified compact bottom toolbar (profile + quick toggles in 1 strip)."""
@@ -502,13 +537,29 @@ class AutoClickerApp(ctk.CTk):
             c.interval_seconds, c.interval_ms
         )
         self.options_card.set_values(c.mouse_button, c.click_type, c.hotkey_mode)
-        self.location_card.set_values(c.location_mode, c.fixed_x, c.fixed_y)
+        self.location_card.set_values(c.location_mode, c.fixed_x, c.fixed_y, c.restore_cursor)
         self.repeat_card.set_values(
             c.repeat_mode, c.repeat_count,
             c.jitter_enabled, c.jitter_interval_pct, c.jitter_position_px
         )
+        self.macro_card.set_restore_cursor(c.restore_cursor)
+        self.macro_card.set_hotkey(c.macro_hotkey)
         if c.macro_steps:
             self.macro_card.set_steps(c.macro_steps)
+        if hasattr(self, 'hotkey_entry') and self.hotkey_entry:
+            self.hotkey_entry.configure(state="normal")
+            self.hotkey_entry.delete(0, 'end')
+            self.hotkey_entry.insert(0, c.hotkey.upper().strip('<>'))
+            self.hotkey_entry.configure(state="readonly")
+        if hasattr(self, 'macro_hotkey_entry') and self.macro_hotkey_entry:
+            self.macro_hotkey_entry.configure(state="normal")
+            self.macro_hotkey_entry.delete(0, 'end')
+            self.macro_hotkey_entry.insert(0, c.macro_hotkey.upper().strip('<>'))
+            self.macro_hotkey_entry.configure(state="readonly")
+        if hasattr(self, 'hotkey_label') and self.hotkey_label:
+            self.hotkey_label.configure(text=f"[{c.hotkey.upper().strip('<>')}]")
+        if hasattr(self, 'start_button') and self.start_button:
+            self.start_button.configure(text=f"▶  {t('start_clicking').upper()} ({c.hotkey.upper().strip('<>')})")
 
     def _collect_config_from_ui(self) -> ClickerConfig:
         hrs, mins, secs, ms = self.interval_card.get_values()
@@ -521,6 +572,7 @@ class AutoClickerApp(ctk.CTk):
         rep_count = self.repeat_card.get_repeat_count()
         jitter_on = self.repeat_card.is_jitter_enabled()
         jitter_int, jitter_pos = self.repeat_card.get_jitter_values()
+        restore_cursor = self.location_card.is_restore_cursor() or self.macro_card.is_restore_cursor()
 
         return ClickerConfig(
             interval_hours=hrs,
@@ -546,6 +598,7 @@ class AutoClickerApp(ctk.CTk):
             macro_steps=self.macro_card.get_steps(),
             macro_repeat_mode=self.macro_card.get_repeat_mode(),
             macro_repeat_count=self.macro_card.get_repeat_count(),
+            restore_cursor=restore_cursor,
         )
 
     def _apply_config_to_engine(self):
@@ -556,6 +609,8 @@ class AutoClickerApp(ctk.CTk):
         self.clicker_engine.jitter_enabled = config.jitter_enabled
         self.clicker_engine.jitter_interval_pct = max(0, config.jitter_interval_pct) / 100.0
         self.clicker_engine.jitter_position_px = max(0, config.jitter_position_px)
+        self.clicker_engine.restore_cursor = config.restore_cursor
+        self.macro_engine.restore_cursor = config.restore_cursor
 
         if config.location_mode == 'fixed':
             self.clicker_engine.fixed_position = (config.fixed_x, config.fixed_y)
@@ -665,6 +720,8 @@ class AutoClickerApp(ctk.CTk):
         else:
             self.macro_engine.repeat_count = 0
 
+        self.macro_engine.restore_cursor = self.macro_card.is_restore_cursor()
+
         self.macro_engine.start()
         self.macro_card.set_running(True)
 
@@ -672,8 +729,19 @@ class AutoClickerApp(ctk.CTk):
         self.macro_engine.stop()
         self.macro_card.set_running(False)
 
+    def _is_point_in_window(self, x: int, y: int) -> bool:
+        try:
+            wx = self.winfo_rootx()
+            wy = self.winfo_rooty()
+            ww = self.winfo_width()
+            wh = self.winfo_height()
+            return (wx <= x <= wx + ww) and (wy <= y <= wy + wh)
+        except Exception:
+            return False
+
     def _start_recording(self):
         self._is_recording_macro = True
+        self._last_record_time = None
         try:
             from pynput import mouse
 
@@ -681,6 +749,16 @@ class AutoClickerApp(ctk.CTk):
                 if not self._is_recording_macro:
                     return False
                 if pressed:
+                    # Ignore clicks inside AutoClicker app itself (e.g. clicking STOP button)
+                    if self._is_point_in_window(int(x), int(y)):
+                        return
+
+                    now = time.time()
+                    if self._last_record_time is not None:
+                        elapsed_ms = max(50, min(30000, int((now - self._last_record_time) * 1000)))
+                        self.after(0, lambda d=elapsed_ms: self.macro_card.update_last_step_delay(d))
+                    self._last_record_time = now
+
                     button_map = {
                         mouse.Button.left: 'click_left',
                         mouse.Button.right: 'click_right',
@@ -699,6 +777,7 @@ class AutoClickerApp(ctk.CTk):
 
     def _stop_recording(self):
         self._is_recording_macro = False
+        self._last_record_time = None
         if self._recording_listener:
             self._recording_listener.stop()
             self._recording_listener = None
@@ -943,16 +1022,21 @@ class AutoClickerApp(ctk.CTk):
 
         if target == "click":
             self.config.hotkey = captured_clean
+            self.hotkey_entry.configure(state="normal")
             self.hotkey_entry.delete(0, 'end')
             self.hotkey_entry.insert(0, captured_clean.upper().strip('<>'))
+            self.hotkey_entry.configure(state="readonly")
             self.hotkey_label.configure(text=f"[{captured_clean.upper().strip('<>')}]")
             self.start_button.configure(
                 text=f"▶  {t('start_clicking').upper()} ({captured_clean.upper().strip('<>')})"
             )
         else:
             self.config.macro_hotkey = captured_clean
+            self.macro_hotkey_entry.configure(state="normal")
             self.macro_hotkey_entry.delete(0, 'end')
             self.macro_hotkey_entry.insert(0, captured_clean.upper().strip('<>'))
+            self.macro_hotkey_entry.configure(state="readonly")
+            self.macro_card.set_hotkey(captured_clean)
 
         self.hotkey_manager.update_hotkey(self.config.hotkey, self.config.macro_hotkey)
         self._save_current_session()
@@ -995,11 +1079,44 @@ class AutoClickerApp(ctk.CTk):
         self.start_button.configure(
             text=f"▶  {t('start_clicking').upper()} ({self.config.hotkey.upper().strip('<>')})"
         )
+        self.macro_card.set_hotkey(self.config.macro_hotkey)
 
         self._save_current_session()
 
         self.hk_status_label.configure(
             text=f"✓ Keybinds applied: [{self.config.hotkey.upper().strip('<>')}] / [{self.config.macro_hotkey.upper().strip('<>')}]",
+            text_color=ACCENT_PRIMARY
+        )
+
+    def _reset_default_hotkeys(self):
+        default_click = "f6"
+        default_macro = "f7"
+
+        self.config.hotkey = default_click
+        self.config.macro_hotkey = default_macro
+
+        self.hotkey_entry.configure(state="normal")
+        self.hotkey_entry.delete(0, 'end')
+        self.hotkey_entry.insert(0, default_click.upper())
+        self.hotkey_entry.configure(state="readonly")
+
+        self.macro_hotkey_entry.configure(state="normal")
+        self.macro_hotkey_entry.delete(0, 'end')
+        self.macro_hotkey_entry.insert(0, default_macro.upper())
+        self.macro_hotkey_entry.configure(state="readonly")
+
+        self.hotkey_manager.update_hotkey(self.config.hotkey, self.config.macro_hotkey)
+
+        self.hotkey_label.configure(text=f"[{default_click.upper()}]")
+        self.start_button.configure(
+            text=f"▶  {t('start_clicking').upper()} ({default_click.upper()})"
+        )
+        self.macro_card.set_hotkey(default_macro)
+
+        self._save_current_session()
+
+        self.hk_status_label.configure(
+            text=f"✓ {t('hotkeys_reset_success')}",
             text_color=ACCENT_PRIMARY
         )
 

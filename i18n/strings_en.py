@@ -94,5 +94,8 @@ STRINGS = {
     "profile_name_prompt": "Enter profile name:",
     "profile_saved": "Profile saved successfully.",
     "profile_deleted": "Profile deleted.",
-    "pick_location_instruction": "Move cursor to desired location and press Enter or right-click to select."
+    "pick_location_instruction": "Move cursor to desired location and press Enter or right-click to select.",
+    "restore_cursor": "Restore Cursor",
+    "reset_hotkeys": "Reset Defaults",
+    "hotkeys_reset_success": "✓ Restored default keybinds: [F6] / [F7]"
 }

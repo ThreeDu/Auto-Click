@@ -122,6 +122,21 @@ class LocationCard(ctk.CTkFrame):
         )
         self.pick_btn.pack(side="left")
 
+        # Restore Cursor Checkbox
+        self.restore_cursor_var = ctk.BooleanVar(value=False)
+        self.restore_cursor_cb = ctk.CTkCheckBox(
+            self.fixed_frame,
+            text=t('restore_cursor'),
+            variable=self.restore_cursor_var,
+            font=(FONT_FAMILY, FONT_SIZE_SM),
+            text_color=TEXT_MAIN,
+            fg_color=ACCENT_AMBER,
+            hover_color=ACCENT_AMBER,
+            checkbox_width=16,
+            checkbox_height=16
+        )
+        self.restore_cursor_cb.pack(side="right", padx=(10, 0))
+
         self.toggle_fixed_inputs()
         self.update_pos()
 
@@ -132,6 +147,7 @@ class LocationCard(ctk.CTkFrame):
         state = "normal" if self.mode_var.get() == "fixed" else "disabled"
         self.x_entry.configure(state=state)
         self.y_entry.configure(state=state)
+        self.restore_cursor_cb.configure(state=state)
 
     def handle_pick_location(self) -> None:
         if self.mode_var.get() != "fixed":
@@ -159,7 +175,13 @@ class LocationCard(ctk.CTkFrame):
         except ValueError:
             return (0, 0)
 
-    def set_values(self, mode: str, x: int, y: int) -> None:
+    def is_restore_cursor(self) -> bool:
+        return self.restore_cursor_var.get()
+
+    def set_restore_cursor(self, value: bool) -> None:
+        self.restore_cursor_var.set(value)
+
+    def set_values(self, mode: str, x: int, y: int, restore_cursor: Optional[bool] = None) -> None:
         self.mode_var.set(mode)
         self.x_entry.configure(state="normal")
         self.x_entry.delete(0, 'end')
@@ -168,4 +190,8 @@ class LocationCard(ctk.CTkFrame):
         self.y_entry.configure(state="normal")
         self.y_entry.delete(0, 'end')
         self.y_entry.insert(0, str(y))
+
+        if restore_cursor is not None:
+            self.restore_cursor_var.set(restore_cursor)
+
         self.toggle_fixed_inputs()

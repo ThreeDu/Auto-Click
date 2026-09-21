@@ -27,6 +27,7 @@ class ClickerEngine:
         self.jitter_enabled = False
         self.jitter_interval_pct = 0.0
         self.jitter_position_px = 0
+        self.restore_cursor = False
         
         # State
         self.click_count = 0
@@ -65,7 +66,8 @@ class ClickerEngine:
         try:
             while not self._stop_event.is_set():
                 # Position
-                x, y = get_cursor_pos()
+                orig_x, orig_y = get_cursor_pos()
+                x, y = orig_x, orig_y
                 if self.fixed_position:
                     x, y = self.fixed_position
                     
@@ -78,6 +80,11 @@ class ClickerEngine:
                     
                 # Click
                 send_click(button=self.button, click_type=self.click_type)
+
+                # Restore cursor position if enabled
+                if self.restore_cursor and (self.fixed_position or self.jitter_enabled):
+                    high_precision_sleep(0.005, stop_event=self._stop_event)
+                    move_cursor(orig_x, orig_y)
                 
                 # Update count
                 self.click_count += 1

@@ -28,6 +28,7 @@ class ClickerConfig:
     macro_steps: list = field(default_factory=list)
     macro_repeat_mode: str = 'count'
     macro_repeat_count: int = 1
+    restore_cursor: bool = False
 
     def get_total_interval_ms(self) -> int:
         """Calculate and return the total interval in milliseconds."""

@@ -94,5 +94,8 @@ STRINGS = {
     "profile_name_prompt": "Nhập tên hồ sơ:",
     "profile_saved": "Đã lưu hồ sơ thành công.",
     "profile_deleted": "Đã xóa hồ sơ.",
-    "pick_location_instruction": "Di chuyển con trỏ tới vị trí mong muốn và nhấn Enter hoặc click chuột phải để chọn."
+    "pick_location_instruction": "Di chuyển con trỏ tới vị trí mong muốn và nhấn Enter hoặc click chuột phải để chọn.",
+    "restore_cursor": "Giữ nguyên chuột",
+    "reset_hotkeys": "Khôi phục mặc định",
+    "hotkeys_reset_success": "✓ Đã khôi phục phím mặc định: [F6] / [F7]"
 }
