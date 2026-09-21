@@ -47,8 +47,8 @@ class MacroEngine:
             return
             
         self._stop_event.set()
-        if self._thread:
-            self._thread.join()
+        if self._thread and self._thread != threading.current_thread():
+            self._thread.join(timeout=0.5)
             self._thread = None
 
     def _macro_loop(self):
@@ -72,7 +72,7 @@ class MacroEngine:
                         send_click(button=button, click_type='single')
                         
                     if step.delay_ms > 0:
-                        high_precision_sleep(step.delay_ms / 1000.0)
+                        high_precision_sleep(step.delay_ms / 1000.0, stop_event=self._stop_event)
                         
                 self.total_iterations += 1
                 if self.repeat_count > 0 and self.total_iterations >= self.repeat_count:

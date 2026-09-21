@@ -1,16 +1,17 @@
-"""Interval configuration card component — Utilitarian / Technical redesign."""
+"""Interval configuration card component — Compact & Utilitarian."""
 
 import customtkinter as ctk
 from i18n.localization import t
 from ui.theme import (
     BG_PANEL, BG_PANEL_ALT, BG_HOVER, BORDER_SUBTLE,
     TEXT_MAIN, TEXT_MUTED, TEXT_DIM, ACCENT_CYAN,
-    FONT_FAMILY, FONT_MONO, RADIUS_PANEL, RADIUS_CONTROL
+    FONT_FAMILY, FONT_MONO, RADIUS_PANEL, RADIUS_CONTROL,
+    FONT_SIZE_XS, FONT_SIZE_SM, FONT_SIZE_BASE, FONT_SIZE_MD
 )
 
 
 class IntervalCard(ctk.CTkFrame):
-    """Card for configuring auto-click interval with precision instrumentation."""
+    """Compact precision interval configuration."""
 
     def __init__(self, master, **kwargs):
         super().__init__(
@@ -22,59 +23,51 @@ class IntervalCard(ctk.CTkFrame):
             **kwargs
         )
 
-        # Header with technical title
-        header_frame = ctk.CTkFrame(self, fg_color="transparent")
-        header_frame.pack(fill="x", padx=16, pady=(14, 10))
+        # Header
+        header = ctk.CTkFrame(self, fg_color="transparent")
+        header.pack(fill="x", padx=10, pady=(8, 4))
 
         self.title_label = ctk.CTkLabel(
-            header_frame,
+            header,
             text=t('interval_title').upper(),
-            font=(FONT_FAMILY, 12, "bold"),
+            font=(FONT_FAMILY, FONT_SIZE_SM, "bold"),
             text_color=TEXT_MUTED
         )
         self.title_label.pack(side="left")
 
-        # Calculated Frequency readout
         self.freq_readout = ctk.CTkLabel(
-            header_frame,
+            header,
             text="10.0 CPS (100ms)",
-            font=(FONT_MONO, 11, "bold"),
+            font=(FONT_MONO, FONT_SIZE_SM, "bold"),
             text_color=ACCENT_CYAN
         )
         self.freq_readout.pack(side="right")
 
-        # Numeric entries grid
-        grid_frame = ctk.CTkFrame(self, fg_color="transparent")
-        grid_frame.pack(fill="x", padx=16, pady=(0, 12))
+        # Main Row: Inputs + Presets side-by-side
+        body = ctk.CTkFrame(self, fg_color="transparent")
+        body.pack(fill="x", padx=10, pady=(0, 8))
 
         vcmd = (self.register(self.validate_number), '%P')
 
-        # 4 units: HR, MIN, SEC, MS
-        units = [
-            ("hr", t('hours'), "0", 0),
-            ("min", t('minutes'), "0", 1),
-            ("sec", t('seconds'), "0", 2),
-            ("ms", t('milliseconds'), "100", 3),
-        ]
+        # 4 inputs
+        inputs_frame = ctk.CTkFrame(body, fg_color="transparent")
+        inputs_frame.pack(side="left")
 
         self.entries = {}
-        for key, label, default, col in units:
-            cell = ctk.CTkFrame(grid_frame, fg_color="transparent")
-            cell.grid(row=0, column=col, padx=(0 if col == 0 else 6, 0), sticky="ew")
-            grid_frame.grid_columnconfigure(col, weight=1)
+        for key, label, default in [("hr", "H", "0"), ("min", "M", "0"), ("sec", "S", "0"), ("ms", "MS", "100")]:
+            col = ctk.CTkFrame(inputs_frame, fg_color="transparent")
+            col.pack(side="left", padx=(0, 4))
 
-            lbl = ctk.CTkLabel(
-                cell,
-                text=label.upper(),
-                font=(FONT_FAMILY, 10, "bold"),
-                text_color=TEXT_DIM
-            )
-            lbl.pack(anchor="w", pady=(0, 3))
+            ctk.CTkLabel(
+                col, text=label, font=(FONT_FAMILY, FONT_SIZE_XS, "bold"), text_color=TEXT_DIM
+            ).pack(pady=(0, 1))
 
+            w = 58 if key == "ms" else 40
             entry = ctk.CTkEntry(
-                cell,
-                height=34,
-                font=(FONT_MONO, 13, "bold"),
+                col,
+                width=w,
+                height=28,
+                font=(FONT_MONO, FONT_SIZE_BASE, "bold"),
                 fg_color=BG_PANEL_ALT,
                 border_color=BORDER_SUBTLE,
                 border_width=1,
@@ -85,7 +78,7 @@ class IntervalCard(ctk.CTkFrame):
                 validatecommand=vcmd
             )
             entry.insert(0, default)
-            entry.pack(fill="x")
+            entry.pack()
             entry.bind("<KeyRelease>", lambda e: self._on_entry_changed())
             self.entries[key] = entry
 
@@ -94,25 +87,25 @@ class IntervalCard(ctk.CTkFrame):
         self.sec_entry = self.entries["sec"]
         self.ms_entry = self.entries["ms"]
 
-        # CPS Quick Preset Pills
-        preset_frame = ctk.CTkFrame(self, fg_color="transparent")
-        preset_frame.pack(fill="x", padx=16, pady=(0, 14))
+        # Presets on the right
+        presets_frame = ctk.CTkFrame(body, fg_color="transparent")
+        presets_frame.pack(side="right", fill="y", padx=(10, 0))
 
-        preset_label = ctk.CTkLabel(
-            preset_frame,
-            text=t('cps_presets').upper(),
-            font=(FONT_FAMILY, 10, "bold"),
-            text_color=TEXT_DIM
-        )
-        preset_label.pack(side="left", padx=(0, 10))
+        ctk.CTkLabel(
+            presets_frame, text="PRESET", font=(FONT_FAMILY, FONT_SIZE_XS, "bold"), text_color=TEXT_DIM
+        ).pack(pady=(0, 1), anchor="e")
 
-        presets = [("10 CPS", 100), ("50 CPS", 20), ("100 CPS", 10), ("MAX (1ms)", 1)]
+        pill_row = ctk.CTkFrame(presets_frame, fg_color="transparent")
+        pill_row.pack(anchor="e")
+
+        presets = [("10", 100), ("50", 20), ("100", 10), ("MAX", 1)]
         for text, ms in presets:
             btn = ctk.CTkButton(
-                preset_frame,
+                pill_row,
                 text=text,
-                height=26,
-                font=(FONT_MONO, 11, "bold"),
+                width=38,
+                height=28,
+                font=(FONT_MONO, FONT_SIZE_SM, "bold"),
                 fg_color=BG_PANEL_ALT,
                 hover_color=BG_HOVER,
                 text_color=TEXT_MAIN,
@@ -121,18 +114,16 @@ class IntervalCard(ctk.CTkFrame):
                 corner_radius=RADIUS_CONTROL,
                 command=lambda m=ms: self.apply_preset(m)
             )
-            btn.pack(side="left", padx=3)
+            btn.pack(side="left", padx=2)
 
     def validate_number(self, p: str) -> bool:
-        """Validate numeric input."""
         return str.isdigit(p) or p == ""
 
     def _on_entry_changed(self):
-        """Update live frequency readout."""
         hr, mn, sc, ms = self.get_values()
         total_ms = (hr * 3600000) + (mn * 60000) + (sc * 1000) + ms
         if total_ms <= 0:
-            self.freq_readout.configure(text="MAX SPEED")
+            self.freq_readout.configure(text="MAX SPEED (1ms)")
         elif total_ms < 1000:
             cps = 1000.0 / total_ms
             self.freq_readout.configure(text=f"{cps:.1f} CPS ({total_ms}ms)")
@@ -141,12 +132,9 @@ class IntervalCard(ctk.CTkFrame):
             self.freq_readout.configure(text=f"1 click / {sec:.1f}s")
 
     def apply_preset(self, ms: int) -> None:
-        """Apply preset milliseconds."""
         self.set_values(0, 0, 0, ms)
-        self._on_entry_changed()
 
     def get_values(self) -> tuple[int, int, int, int]:
-        """Get interval values (hr, min, sec, ms)."""
         try:
             hr = int(self.hr_entry.get()) if self.hr_entry.get() else 0
             mn = int(self.min_entry.get()) if self.min_entry.get() else 0
@@ -157,7 +145,6 @@ class IntervalCard(ctk.CTkFrame):
             return (0, 0, 0, 100)
 
     def set_values(self, hours: int, minutes: int, seconds: int, milliseconds: int) -> None:
-        """Set interval values."""
         for entry, val in [
             (self.hr_entry, hours),
             (self.min_entry, minutes),

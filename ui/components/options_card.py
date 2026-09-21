@@ -1,16 +1,17 @@
-"""Options configuration card component — Utilitarian / Technical redesign."""
+"""Options configuration card component — Compact & Utilitarian."""
 
 import customtkinter as ctk
 from i18n.localization import t
 from ui.theme import (
-    BG_PANEL, BG_PANEL_ALT, BORDER_SUBTLE,
+    BG_PANEL, BG_PANEL_ALT, BG_HOVER, BORDER_SUBTLE,
     TEXT_MAIN, TEXT_MUTED, TEXT_DIM, ACCENT_AMBER,
-    FONT_FAMILY, FONT_MONO, RADIUS_PANEL, RADIUS_CONTROL
+    FONT_FAMILY, RADIUS_PANEL, RADIUS_CONTROL,
+    FONT_SIZE_XS, FONT_SIZE_SM, FONT_SIZE_BASE, FONT_SIZE_MD
 )
 
 
 class OptionsCard(ctk.CTkFrame):
-    """Card for configuring click action and trigger mode."""
+    """Compact card for click action and trigger mode."""
 
     def __init__(self, master, **kwargs):
         super().__init__(
@@ -23,134 +24,118 @@ class OptionsCard(ctk.CTkFrame):
         )
 
         # Header
-        header_frame = ctk.CTkFrame(self, fg_color="transparent")
-        header_frame.pack(fill="x", padx=16, pady=(14, 10))
-
-        self.title_label = ctk.CTkLabel(
-            header_frame,
-            text=t('options_title').upper(),
-            font=(FONT_FAMILY, 12, "bold"),
-            text_color=TEXT_MUTED
-        )
-        self.title_label.pack(side="left")
-
-        # Row 1: Mouse Button & Click Type (2 equal columns)
-        cols_frame = ctk.CTkFrame(self, fg_color="transparent")
-        cols_frame.pack(fill="x", padx=16, pady=(0, 12))
-        cols_frame.grid_columnconfigure((0, 1), weight=1)
-
-        # Mouse Button
-        btn_cell = ctk.CTkFrame(cols_frame, fg_color="transparent")
-        btn_cell.grid(row=0, column=0, padx=(0, 6), sticky="ew")
-
         ctk.CTkLabel(
-            btn_cell,
-            text=t('mouse_button').upper(),
-            font=(FONT_FAMILY, 10, "bold"),
-            text_color=TEXT_DIM
-        ).pack(anchor="w", pady=(0, 3))
+            self,
+            text=t('options_title').upper(),
+            font=(FONT_FAMILY, FONT_SIZE_SM, "bold"),
+            text_color=TEXT_MUTED
+        ).pack(anchor="w", padx=10, pady=(8, 4))
+
+        # Main controls row: Dropdowns on left, Mode Radios on right
+        body_row = ctk.CTkFrame(self, fg_color="transparent")
+        body_row.pack(fill="x", padx=10, pady=(0, 8))
+
+        # Left side: Button selector + Type selector
+        left_box = ctk.CTkFrame(body_row, fg_color="transparent")
+        left_box.pack(side="left")
 
         self.btn_var = ctk.StringVar(value="left")
         self.btn_menu = ctk.CTkOptionMenu(
-            btn_cell,
+            left_box,
             variable=self.btn_var,
             values=[t('left'), t('right'), t('middle')],
-            height=32,
-            font=(FONT_FAMILY, 12, "bold"),
+            width=105,
+            height=28,
+            font=(FONT_FAMILY, FONT_SIZE_BASE, "bold"),
             fg_color=BG_PANEL_ALT,
-            button_color=BG_PANEL_ALT,
-            button_hover_color="#252B36",
+            button_color=BORDER_SUBTLE,
+            button_hover_color=BG_HOVER,
             text_color=TEXT_MAIN,
+            dropdown_fg_color=BG_PANEL,
+            dropdown_hover_color=BG_HOVER,
+            dropdown_text_color=TEXT_MAIN,
+            dropdown_font=(FONT_FAMILY, FONT_SIZE_SM),
             corner_radius=RADIUS_CONTROL
         )
-        self.btn_menu.pack(fill="x")
-
-        # Click Type
-        type_cell = ctk.CTkFrame(cols_frame, fg_color="transparent")
-        type_cell.grid(row=0, column=1, padx=(6, 0), sticky="ew")
-
-        ctk.CTkLabel(
-            type_cell,
-            text=t('click_type').upper(),
-            font=(FONT_FAMILY, 10, "bold"),
-            text_color=TEXT_DIM
-        ).pack(anchor="w", pady=(0, 3))
+        self.btn_menu.pack(side="left", padx=(0, 6))
 
         self.type_var = ctk.StringVar(value="single")
         self.type_menu = ctk.CTkOptionMenu(
-            type_cell,
+            left_box,
             variable=self.type_var,
             values=[t('single'), t('double'), t('triple')],
-            height=32,
-            font=(FONT_FAMILY, 12, "bold"),
+            width=105,
+            height=28,
+            font=(FONT_FAMILY, FONT_SIZE_BASE, "bold"),
             fg_color=BG_PANEL_ALT,
-            button_color=BG_PANEL_ALT,
-            button_hover_color="#252B36",
+            button_color=BORDER_SUBTLE,
+            button_hover_color=BG_HOVER,
             text_color=TEXT_MAIN,
+            dropdown_fg_color=BG_PANEL,
+            dropdown_hover_color=BG_HOVER,
+            dropdown_text_color=TEXT_MAIN,
+            dropdown_font=(FONT_FAMILY, FONT_SIZE_SM),
             corner_radius=RADIUS_CONTROL
         )
-        self.type_menu.pack(fill="x")
+        self.type_menu.pack(side="left")
 
-        # Row 2: Activation Mode (Toggle vs Hold)
-        mode_frame = ctk.CTkFrame(self, fg_color="transparent")
-        mode_frame.pack(fill="x", padx=16, pady=(0, 14))
-
-        ctk.CTkLabel(
-            mode_frame,
-            text=t('mode').upper(),
-            font=(FONT_FAMILY, 10, "bold"),
-            text_color=TEXT_DIM
-        ).pack(anchor="w", pady=(0, 4))
-
-        radio_row = ctk.CTkFrame(mode_frame, fg_color="transparent")
-        radio_row.pack(fill="x")
+        # Right side: Trigger Mode (Toggle / Hold)
+        right_box = ctk.CTkFrame(body_row, fg_color="transparent")
+        right_box.pack(side="right")
 
         self.mode_var = ctk.StringVar(value="toggle")
+        self.on_mode_changed = None
 
         self.mode_toggle = ctk.CTkRadioButton(
-            radio_row,
-            text=f"{t('toggle')} (Press to start/stop)",
+            right_box,
+            text=t('toggle'),
             variable=self.mode_var,
             value="toggle",
-            font=(FONT_FAMILY, 12),
+            font=(FONT_FAMILY, FONT_SIZE_BASE),
             text_color=TEXT_MAIN,
             fg_color=ACCENT_AMBER,
-            hover_color=ACCENT_AMBER
+            hover_color=ACCENT_AMBER,
+            radiobutton_width=16,
+            radiobutton_height=16,
+            command=self._on_mode_radio_changed
         )
-        self.mode_toggle.pack(side="left", padx=(0, 16))
+        self.mode_toggle.pack(side="left", padx=(0, 10))
 
         self.mode_hold = ctk.CTkRadioButton(
-            radio_row,
-            text=f"{t('hold')} (Active while held)",
+            right_box,
+            text=t('hold'),
             variable=self.mode_var,
             value="hold",
-            font=(FONT_FAMILY, 12),
+            font=(FONT_FAMILY, FONT_SIZE_BASE),
             text_color=TEXT_MAIN,
             fg_color=ACCENT_AMBER,
-            hover_color=ACCENT_AMBER
+            hover_color=ACCENT_AMBER,
+            radiobutton_width=16,
+            radiobutton_height=16,
+            command=self._on_mode_radio_changed
         )
         self.mode_hold.pack(side="left")
 
+    def _on_mode_radio_changed(self):
+        if self.on_mode_changed:
+            self.on_mode_changed(self.mode_var.get())
+
     def get_button(self) -> str:
-        """Get selected button."""
         val = self.btn_var.get()
         if val == t('right'): return 'right'
         if val == t('middle'): return 'middle'
         return 'left'
 
     def get_click_type(self) -> str:
-        """Get selected click type."""
         val = self.type_var.get()
         if val == t('double'): return 'double'
         if val == t('triple'): return 'triple'
         return 'single'
 
     def get_mode(self) -> str:
-        """Get selected mode."""
         return self.mode_var.get()
 
     def set_values(self, button: str, click_type: str, mode: str) -> None:
-        """Set values."""
         if button == 'right':
             self.btn_var.set(t('right'))
         elif button == 'middle':

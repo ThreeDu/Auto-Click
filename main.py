@@ -1,5 +1,5 @@
 """
-AutoClicker Pro — Entry Point
+AutoClicker — Entry Point
 High-DPI aware, loads last session, launches main application.
 """
 import ctypes
@@ -33,8 +33,58 @@ def get_app_dir() -> str:
         return os.path.dirname(os.path.abspath(__file__))
 
 
+import socket
+import threading
+
+SINGLE_INSTANCE_PORT = 47829
+
+
+def try_signal_existing_instance() -> bool:
+    """If an instance is already running, signals it to show its window and returns True."""
+    try:
+        client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        client.settimeout(1.0)
+        client.connect(('127.0.0.1', SINGLE_INSTANCE_PORT))
+        client.sendall(b"SHOW\n")
+        client.close()
+        return True
+    except Exception:
+        return False
+
+
+def start_instance_server(app):
+    """Starts listening on single-instance port to bring window to front when triggered."""
+    try:
+        server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        server.bind(('127.0.0.1', SINGLE_INSTANCE_PORT))
+        server.listen(2)
+
+        def listen_loop():
+            while True:
+                try:
+                    conn, _ = server.accept()
+                    data = conn.recv(64)
+                    if b"SHOW" in data:
+                        app.after(0, app.restore_window)
+                    conn.close()
+                except Exception:
+                    break
+
+        t = threading.Thread(target=listen_loop, daemon=True)
+        t.start()
+        return server
+    except Exception as e:
+        print(f"Single instance server start failed: {e}")
+        return None
+
+
 def main():
     """Application entry point."""
+    # Check if another instance is already running
+    if try_signal_existing_instance():
+        print("AutoClicker is already running. Restored existing window.")
+        sys.exit(0)
+
     # Set DPI awareness before any GUI operations
     enable_high_dpi_awareness()
 
@@ -47,7 +97,11 @@ def main():
     from config import ClickerConfig
     from profile_manager import ProfileManager
     from i18n.localization import set_language
+    from ui.theme import apply_theme_patches
     from ui.app import AutoClickerApp
+
+    # Apply global theme patches (fixes dropdown styling and removes Windows white border)
+    apply_theme_patches()
 
     # Setup profiles directory
     profiles_dir = os.path.join(app_dir, 'profiles')
@@ -63,7 +117,16 @@ def main():
 
     # Create and run the application
     app = AutoClickerApp(config, profile_manager)
-    app.mainloop()
+    instance_server = start_instance_server(app)
+
+    try:
+        app.mainloop()
+    finally:
+        if instance_server:
+            try:
+                instance_server.close()
+            except Exception:
+                pass
 
 
 if __name__ == '__main__':

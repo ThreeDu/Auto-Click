@@ -1,1 +1,1 @@
-"""UI package for AutoClicker Pro."""
+"""UI package for AutoClicker."""

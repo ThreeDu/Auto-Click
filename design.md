@@ -1,6 +1,6 @@
-# Design — AutoClicker Pro
+# Design — AutoClicker
 
-A locked design system for AutoClicker Pro desktop application.
+A locked design system for AutoClicker desktop application.
 
 ## Genre
 modern-minimal / utilitarian (tactile precision instrument)

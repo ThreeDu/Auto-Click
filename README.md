@@ -1,4 +1,4 @@
-# AutoClicker Pro
+# AutoClicker
 
 Tool auto click và macro chuột đa điểm cho Windows, giao diện tối đơn giản, tốc độ cao (lên đến 1000+ CPS).
 
@@ -47,4 +47,4 @@ Chạy file:
 ```cmd
 build_nuitka.bat
 ```
-File `.exe` sẽ được tạo trong thư mục `main.dist/AutoClickerPro.exe`.
+File `.exe` sẽ được tạo trong thư mục `main.dist/AutoClicker.exe`.

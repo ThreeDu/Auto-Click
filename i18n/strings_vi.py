@@ -1,6 +1,6 @@
 STRINGS = {
     # App
-    "app_title": "AutoClicker Pro",
+    "app_title": "AutoClicker",
     "status_ready": "Trạng thái: Sẵn sàng",
     "status_running": "Trạng thái: Đang chạy",
     "status_stopped": "Trạng thái: Đã dừng",

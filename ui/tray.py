@@ -22,14 +22,14 @@ class TrayManager:
         
     def start(self):
         menu = pystray.Menu(
-            pystray.MenuItem(t('show_hide'), self._toggle_window),
+            pystray.MenuItem(t('show_hide'), self._toggle_window, default=True),
             pystray.MenuItem(t('run_macro'), self._trigger_start_stop),
             pystray.MenuItem(t('mini_hud'), self._trigger_hud),
             pystray.Menu.SEPARATOR,
             pystray.MenuItem(t('exit'), self._exit_app)
         )
         
-        self.icon = pystray.Icon("AutoClickerPro", self.image, "AutoClicker Pro", menu)
+        self.icon = pystray.Icon("AutoClicker", self.image, "AutoClicker", menu)
         
         # Run icon in daemon thread
         self.thread = threading.Thread(target=self.icon.run, daemon=True)
@@ -37,31 +37,42 @@ class TrayManager:
         
     def stop(self):
         if self.icon:
-            self.icon.stop()
+            try:
+                self.icon.stop()
+            except Exception:
+                pass
             
-    def _toggle_window(self, icon, item):
-        # We need to run this in the main thread
+    def _toggle_window(self, icon=None, item=None):
         self.app.after(0, self._do_toggle_window)
         
     def _do_toggle_window(self):
-        if self.app.state() == "withdrawn":
+        if hasattr(self.app, 'toggle_visibility'):
+            self.app.toggle_visibility()
+        elif self.app.state() == "withdrawn":
             self.app.deiconify()
         else:
             self.app.withdraw()
             
-    def _trigger_start_stop(self, icon, item):
+    def _trigger_start_stop(self, icon=None, item=None):
         if self.on_toggle_click:
             self.app.after(0, self.on_toggle_click)
             
-    def _trigger_hud(self, icon, item):
+    def _trigger_hud(self, icon=None, item=None):
         if self.on_toggle_hud:
             self.app.after(0, self.on_toggle_hud)
             
-    def _exit_app(self, icon, item):
+    def _exit_app(self, icon=None, item=None):
         self.stop()
-        self.app.after(0, self.app.destroy)
-        
-    def setup_close_override(self, root):
-        def on_closing():
-            root.withdraw()
-        root.protocol("WM_DELETE_WINDOW", on_closing)
+        if hasattr(self.app, '_on_close'):
+            self.app.after(0, self.app._on_close)
+        else:
+            self.app.after(0, self.app.destroy)
+
+    def notify(self, title: str, message: str):
+        """Show balloon notification if supported."""
+        try:
+            if self.icon and hasattr(self.icon, 'notify'):
+                self.icon.notify(message, title)
+        except Exception:
+            pass
+

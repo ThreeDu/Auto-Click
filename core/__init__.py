@@ -1,3 +1,3 @@
 """
-Core engine modules for AutoClicker Pro.
+Core engine modules for AutoClicker.
 """

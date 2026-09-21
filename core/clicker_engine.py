@@ -50,13 +50,13 @@ class ClickerEngine:
         self._thread.start()
 
     def stop(self):
-        """Stops the click loop."""
+        """Stops the click loop safely with timeout."""
         if not self.is_running:
             return
             
         self._stop_event.set()
-        if self._thread:
-            self._thread.join()
+        if self._thread and self._thread != threading.current_thread():
+            self._thread.join(timeout=0.5)
             self._thread = None
 
     def _click_loop(self):
@@ -95,7 +95,8 @@ class ClickerEngine:
                         variation = sleep_ms * self.jitter_interval_pct
                         sleep_ms = random.uniform(sleep_ms - variation, sleep_ms + variation)
                         
-                    high_precision_sleep(max(0, sleep_ms) / 1000.0)
+                    high_precision_sleep(max(0, sleep_ms) / 1000.0, stop_event=self._stop_event)
+
                     
         finally:
             restore_timer_resolution()

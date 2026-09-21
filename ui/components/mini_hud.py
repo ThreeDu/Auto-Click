@@ -6,7 +6,8 @@ from i18n.localization import t
 from ui.theme import (
     BG_BASE, BG_PANEL, BG_PANEL_ALT, BORDER_SUBTLE,
     TEXT_MAIN, TEXT_MUTED, TEXT_DIM, ACCENT_PRIMARY, ACCENT_ALERT, ACCENT_CYAN,
-    FONT_FAMILY, FONT_MONO, RADIUS_CONTROL
+    FONT_FAMILY, FONT_MONO, RADIUS_CONTROL,
+    FONT_SIZE_XS, FONT_SIZE_SM, FONT_SIZE_BASE, FONT_SIZE_MD
 )
 
 
@@ -19,7 +20,7 @@ class MiniHUD(ctk.CTkToplevel):
         self.on_stop_clicked: Optional[Callable] = None
 
         # Window properties
-        self.geometry("460x44+100+100")
+        self.geometry("480x48+100+100")
         self.overrideredirect(True)
         self.attributes('-topmost', True)
         self.attributes('-alpha', 0.94)
@@ -45,9 +46,9 @@ class MiniHUD(ctk.CTkToplevel):
         self.status_pill = ctk.CTkLabel(
             self.main_frame,
             text="● STANDBY",
-            font=(FONT_FAMILY, 10, "bold"),
+            font=(FONT_FAMILY, FONT_SIZE_SM, "bold"),
             text_color=TEXT_DIM,
-            width=80,
+            width=90,
             anchor="w"
         )
         self.status_pill.pack(side="left", padx=(12, 6), pady=8)
@@ -56,22 +57,22 @@ class MiniHUD(ctk.CTkToplevel):
         self.cps_label = ctk.CTkLabel(
             self.main_frame,
             text="CPS: 0.0",
-            font=(FONT_MONO, 12, "bold"),
+            font=(FONT_MONO, FONT_SIZE_MD, "bold"),
             text_color=ACCENT_CYAN,
-            width=90,
+            width=96,
             anchor="center"
         )
         self.cps_label.pack(side="left", padx=4, pady=8)
 
         # Hairline separator
-        sep = ctk.CTkFrame(self.main_frame, width=1, height=18, fg_color=BORDER_SUBTLE)
+        sep = ctk.CTkFrame(self.main_frame, width=1, height=20, fg_color=BORDER_SUBTLE)
         sep.pack(side="left", padx=6, pady=10)
 
         # Click Count Readout
         self.clicks_label = ctk.CTkLabel(
             self.main_frame,
             text="CLICKS: 0",
-            font=(FONT_MONO, 12, "bold"),
+            font=(FONT_MONO, FONT_SIZE_MD, "bold"),
             text_color=TEXT_MAIN,
             anchor="w"
         )
@@ -81,9 +82,9 @@ class MiniHUD(ctk.CTkToplevel):
         self.btn_stop = ctk.CTkButton(
             self.main_frame,
             text=t('stop').upper(),
-            width=55,
-            height=26,
-            font=(FONT_FAMILY, 10, "bold"),
+            width=60,
+            height=28,
+            font=(FONT_FAMILY, FONT_SIZE_SM, "bold"),
             fg_color=ACCENT_ALERT,
             hover_color="#DC2626",
             text_color=TEXT_MAIN,

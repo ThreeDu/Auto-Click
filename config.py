@@ -4,7 +4,7 @@ from dataclasses import dataclass, field, asdict
 
 @dataclass
 class ClickerConfig:
-    """Data class for storing AutoClicker Pro configuration."""
+    """Data class for storing AutoClicker configuration."""
     interval_hours: int = 0
     interval_minutes: int = 0
     interval_seconds: int = 0

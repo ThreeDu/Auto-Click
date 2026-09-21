@@ -16,21 +16,25 @@ def restore_timer_resolution():
     """Restores the timer resolution."""
     winmm.timeEndPeriod(1)
 
-def high_precision_sleep(duration_seconds: float):
+def high_precision_sleep(duration_seconds: float, stop_event=None):
     """
     Hybrid approach: time.sleep() for coarse wait, then busy-wait with time.perf_counter() 
-    for sub-ms precision.
+    for sub-ms precision. Checks stop_event periodically for instant responsiveness.
     """
     target = time.perf_counter() + duration_seconds
     
-    # Coarse sleep if duration is long enough (>3ms)
-    # Sleep duration minus a 2ms margin
-    if duration_seconds > 0.003:
-        time.sleep(duration_seconds - 0.002)
+    while duration_seconds > 0.003 and (stop_event is None or not stop_event.is_set()):
+        remaining = target - time.perf_counter()
+        if remaining <= 0.002:
+            break
+        # Sleep in small slices so stop_event is detected rapidly
+        slice_time = min(0.02, remaining - 0.002)
+        time.sleep(slice_time)
         
-    # Busy wait for the remainder
+    # Busy wait for the sub-millisecond remainder
     while time.perf_counter() < target:
-        pass
+        if stop_event and stop_event.is_set():
+            break
 
 @contextmanager
 def timer_resolution():

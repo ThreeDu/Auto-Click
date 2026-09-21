@@ -1,6 +1,6 @@
 @echo off
 echo ======================================
-echo  Building AutoClicker Pro with Nuitka
+echo  Building AutoClicker with Nuitka
 echo ======================================
 echo.
 
@@ -20,19 +20,19 @@ python -m nuitka ^
     --windows-disable-console ^
     --windows-icon-from-ico=assets/icon.ico ^
     --windows-company-name="AutoClicker" ^
-    --windows-product-name="AutoClicker Pro" ^
+    --windows-product-name="AutoClicker" ^
     --windows-file-version=1.0.0.0 ^
     --windows-product-version=1.0.0.0 ^
     --enable-plugin=tk-inter ^
     --include-data-dir=i18n=i18n ^
-    --output-filename=AutoClickerPro.exe ^
+    --output-filename=AutoClicker.exe ^
     main.py
 
 echo.
 if %errorlevel% equ 0 (
     echo ======================================
     echo  Build successful!
-    echo  Output: main.dist\AutoClickerPro.exe
+    echo  Output: main.dist\AutoClicker.exe
     echo ======================================
 ) else (
     echo Build failed. Check errors above.

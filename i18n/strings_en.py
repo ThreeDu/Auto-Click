@@ -1,6 +1,6 @@
 STRINGS = {
     # App
-    "app_title": "AutoClicker Pro",
+    "app_title": "AutoClicker",
     "status_ready": "Status: Ready",
     "status_running": "Status: Running",
     "status_stopped": "Status: Stopped",
