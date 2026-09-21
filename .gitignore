@@ -31,6 +31,7 @@ ENV/
 # Agent & AI Tooling files
 .agents/
 .gemini/
+.hallmark/
 
 # Nuitka & PyInstaller build outputs
 main.build/

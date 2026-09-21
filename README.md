@@ -1,116 +1,50 @@
-# ⚡ AutoClicker Pro
+# AutoClicker Pro
 
-A modern, high-performance desktop auto-clicker for Windows with multi-language support (EN/VI), macro recording, and customizable profiles.
+Tool auto click và macro chuột đa điểm cho Windows, giao diện tối đơn giản, tốc độ cao (lên đến 1000+ CPS).
 
-![Python](https://img.shields.io/badge/Python-3.10+-blue.svg)
-![Platform](https://img.shields.io/badge/Platform-Windows-blue.svg)
-![License](https://img.shields.io/badge/License-MIT-green.svg)
+---
 
-## ✨ Features
+## Cách cài đặt & Chạy
 
-### Auto Click
-- ⏱️ **Precise Interval Control** — Hours, Minutes, Seconds, Milliseconds
-- 🎯 **CPS Presets** — Quick buttons for 10, 50, 100, Max CPS
-- 🖱️ **Mouse Button** — Left, Right, Middle
-- 👆 **Click Type** — Single, Double, Triple
-- 📍 **Target Location** — Follow cursor or Fixed coordinate with Pick Location tool
-- 🔁 **Repeat Mode** — Infinite or limited count
-- 🎲 **Humanizer Jitter** — Randomize interval & position to avoid bot detection
-- ⌨️ **Global Hotkey** — Toggle (F6) or Hold mode, works when minimized
-
-### Macro
-- 🔄 **Multi-Point Macro** — Create sequences of clicks at different positions
-- 🔴 **Record Mode** — Record your clicks to create macros automatically
-- ♻️ **Loop Control** — Run macros N times or infinitely
-
-### Advanced
-- 🌐 **Bilingual UI** — English / Tiếng Việt
-- 🗔 **Mini HUD** — Floating overlay showing CPS & click count
-- 📁 **Profile System** — Save/Load configurations as JSON profiles
-- 🔽 **System Tray** — Minimize to tray, runs in background
-- 📌 **Always on Top** — Keep window above other apps
-- 🎨 **Dark/Light Theme** — Modern CustomTkinter UI
-
-## 🚀 Quick Start
-
-### Prerequisites
-- Python 3.10 or higher
-- Windows 10/11
-
-### Installation
+Yêu cầu: Đã cài **Python 3.10+** trên Windows.
 
 ```bash
-# Clone the repository
-git clone https://github.com/yourusername/Auto-Click.git
-cd Auto-Click
-
-# Install dependencies
+# 1. Cài đặt thư viện cần thiết
 pip install -r requirements.txt
 
-# Run the application
+# 2. Chạy ứng dụng
 python main.py
 ```
 
-### Default Hotkeys
+---
 
-| Hotkey | Action |
+## Phím tắt mặc định
+
+| Phím tắt | Chức năng |
 |:---|:---|
-| `F6` | Start/Stop Auto Click |
-| `F7` | Start/Stop Macro |
+| **F6** | Bật / Tắt Auto Click |
+| **F7** | Bật / Tắt Macro đa điểm |
 
-## 📁 Project Structure
+*(Có thể đổi phím tắt trong tab **Settings**)*
 
-```
-Auto-Click/
-├── core/                    # Core engine modules
-│   ├── win32_input.py       # Win32 SendInput wrapper (high-speed clicks)
-│   ├── timer.py             # High-precision timer (1ms resolution)
-│   ├── clicker_engine.py    # Auto-click worker thread
-│   ├── macro_engine.py      # Multi-point macro runner
-│   └── hotkey_manager.py    # Global hotkey listener (pynput)
-├── ui/                      # GUI components (CustomTkinter)
-│   ├── app.py               # Main application window & controller
-│   ├── tray.py              # System tray integration (pystray)
-│   └── components/          # UI cards
-│       ├── interval_card.py # Click interval configuration
-│       ├── options_card.py  # Mouse button & click type
-│       ├── location_card.py # Target location & coordinate picker
-│       ├── repeat_card.py   # Repeat rules & jitter settings
-│       ├── macro_card.py    # Macro step editor & recorder
-│       ├── profile_card.py  # Profile save/load bar
-│       └── mini_hud.py      # Floating mini overlay
-├── i18n/                    # Internationalization
-│   ├── localization.py      # Translation engine
-│   ├── strings_en.py        # English strings
-│   └── strings_vi.py        # Vietnamese strings
-├── profiles/                # Saved user profiles (JSON)
-├── config.py                # Configuration dataclass
-├── profile_manager.py       # Profile CRUD manager
-├── main.py                  # Entry point
-├── requirements.txt         # Python dependencies
-└── build_nuitka.bat         # Build standalone .exe
-```
+---
 
-## 🔧 Technical Details
+## Tính năng chính
 
-- **Click Speed**: Up to 1000+ CPS using Win32 `SendInput` via `ctypes`
-- **Timer Precision**: 1ms resolution via `winmm.timeBeginPeriod(1)` + hybrid busy-wait
-- **High-DPI**: Per-Monitor DPI Aware v2 for accurate coordinates on 4K displays
-- **Threading**: Isolated GUI, Engine, Hotkey, and Tray threads for responsive UI
-- **Antivirus**: Build with Nuitka (native C compilation) to minimize false positives
+- **Auto Click tốc độ cao**: Chỉnh thời gian linh hoạt (giờ, phút, giây, mili-giây) hoặc chọn nhanh `10`, `50`, `100`, `MAX (1ms)`.
+- **Macro đa điểm**: Tự tạo chuỗi click nhiều vị trí trên màn hình hoặc nhấn **Record** để ghi lại thao tác click thực tế.
+- **Tùy chọn vị trí**: Click theo con trỏ chuột hoặc khóa tọa độ cố định (có công cụ chấm tọa độ nhanh).
+- **Chống phát hiện (Jitter)**: Tạo độ lệch ngẫu nhiên về thời gian và vị trí để tránh bị game/web phát hiện bot.
+- **Mini HUD**: Thanh trạng thái nhỏ gọn nổi trên màn hình game theo dõi số click và CPS.
+- **Quản lý Profile**: Lưu và tải cấu hình cho từng game hoặc tác vụ khác nhau.
+- **Chạy nền**: Thu nhỏ xuống khay hệ thống (System Tray) tiện lợi.
 
-## 📦 Building Standalone Executable
+---
 
-```bash
-# Install Nuitka
-pip install nuitka
+## Đóng gói thành file .exe (Không cần Python)
 
-# Build
+Chạy file:
+```cmd
 build_nuitka.bat
 ```
-
-The executable will be created at `main.dist/AutoClickerPro.exe`.
-
-## 📄 License
-
-MIT License — See [LICENSE](LICENSE) for details.
+File `.exe` sẽ được tạo trong thư mục `main.dist/AutoClickerPro.exe`.
