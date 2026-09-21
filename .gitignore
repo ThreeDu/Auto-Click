@@ -1,0 +1,54 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+*.manifest
+*.spec
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Virtual environments
+venv/
+env/
+.venv/
+ENV/
+
+# IDE & Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+*.sublime-project
+*.sublime-workspace
+
+# Agent & AI Tooling files
+.agents/
+.gemini/
+
+# Nuitka & PyInstaller build outputs
+main.build/
+main.dist/
+main.onefile-build/
+*.exe
+*.bin
+
+# Logs & Temp files
+*.log
+*.tmp
+*.bak
+
+# OS generated files
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+# App runtime & User data
+profiles/*.json
+!profiles/.gitkeep
