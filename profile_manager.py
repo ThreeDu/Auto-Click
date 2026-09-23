@@ -8,7 +8,17 @@ class ProfileManager:
     def __init__(self, profiles_dir: str):
         """Initialize the profile manager, creates directory if it doesn't exist."""
         self.profiles_dir = profiles_dir
-        if not os.path.exists(self.profiles_dir):
+        try:
+            os.makedirs(self.profiles_dir, exist_ok=True)
+            # Test write permission
+            test_file = os.path.join(self.profiles_dir, '.write_test')
+            with open(test_file, 'w') as f:
+                f.write('ok')
+            os.remove(test_file)
+        except Exception:
+            # Fallback to APPDATA if directory is read-only
+            appdata = os.environ.get('APPDATA', os.path.expanduser('~'))
+            self.profiles_dir = os.path.join(appdata, 'AutoClicker', 'profiles')
             os.makedirs(self.profiles_dir, exist_ok=True)
             
     def list_profiles(self) -> list[str]:

@@ -4,6 +4,8 @@ Compact & Sleek Utilitarian Redesign.
 Zero-scroll Auto-Click deck, side-by-side modular controls, high-density hardware HUD.
 """
 
+import os
+import sys
 import time
 import customtkinter as ctk
 from typing import Optional
@@ -132,13 +134,21 @@ class AutoClickerApp(ctk.CTk):
             self.attributes("-topmost", True)
 
         # Set app window and taskbar icon
-        app_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-        icon_path = os.path.join(app_dir, 'assets', 'icon.ico')
-        if os.path.exists(icon_path):
-            try:
-                self.iconbitmap(icon_path)
-            except Exception:
-                pass
+        from main import get_app_dir, get_bundle_dir
+        icon_candidates = [
+            os.path.join(get_bundle_dir(), 'assets', 'icon.ico'),
+            os.path.join(get_app_dir(), 'assets', 'icon.ico'),
+            os.path.join(os.path.dirname(os.path.abspath(__file__)), 'assets', 'icon.ico'),
+            os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'assets', 'icon.ico'),
+            os.path.join(os.getcwd(), 'assets', 'icon.ico'),
+        ]
+        for icon_path in icon_candidates:
+            if os.path.exists(icon_path):
+                try:
+                    self.iconbitmap(icon_path)
+                    break
+                except Exception:
+                    pass
 
         self.protocol("WM_DELETE_WINDOW", self._on_close)
 
@@ -149,12 +159,21 @@ class AutoClickerApp(ctk.CTk):
     # ─── Build UI ──────────────────────────────────────────────
 
     def _build_ui(self):
+        if hasattr(self, 'content_frame') and self.content_frame:
+            try:
+                self.content_frame.destroy()
+            except Exception:
+                pass
+
+        self.content_frame = ctk.CTkFrame(self, fg_color="transparent")
+        self.content_frame.pack(fill="both", expand=True)
+
         # 1. Top Instrument Status Strip
-        self._build_status_bar()
+        self._build_status_bar(self.content_frame)
 
         # 2. Segmented Navigation Tab View
         self.tabview = ctk.CTkTabview(
-            self,
+            self.content_frame,
             corner_radius=RADIUS_PANEL,
             fg_color=BG_BASE,
             segmented_button_fg_color=BG_PANEL_ALT,
@@ -188,12 +207,13 @@ class AutoClickerApp(ctk.CTk):
         self.macro_card.restore_cursor_cb.configure(command=_sync_restore_from_macro)
 
         # 3. Bottom Unified Control Dock
-        self._build_bottom_bar()
+        self._build_bottom_bar(self.content_frame)
 
-    def _build_status_bar(self):
+    def _build_status_bar(self, parent=None):
         """Compact status instrument strip."""
+        p = parent if parent is not None else self
         self.status_frame = ctk.CTkFrame(
-            self,
+            p,
             corner_radius=RADIUS_PANEL,
             fg_color=BG_PANEL,
             border_width=1,
@@ -292,6 +312,7 @@ class AutoClickerApp(ctk.CTk):
         self.macro_card.on_stop_macro = self._stop_macro
         self.macro_card.on_record_start = self._start_recording
         self.macro_card.on_record_stop = self._stop_recording
+        self.macro_card.on_steps_changed = self._save_current_session
 
     def _build_settings_tab(self, parent):
         """Compact settings tab with legible typography."""
@@ -444,12 +465,13 @@ class AutoClickerApp(ctk.CTk):
         )
         apply_btn.grid(row=0, column=1, padx=(4, 0), sticky="ew")
 
-    def _build_bottom_bar(self):
+    def _build_bottom_bar(self, parent=None):
         """Unified compact bottom toolbar (profile + quick toggles in 1 strip)."""
         from ui.components.profile_card import ProfileCard
 
+        p = parent if parent is not None else self
         dock_strip = ctk.CTkFrame(
-            self,
+            p,
             corner_radius=RADIUS_PANEL,
             fg_color=BG_PANEL,
             border_width=1,
@@ -531,35 +553,39 @@ class AutoClickerApp(ctk.CTk):
     # ─── Config ↔ UI ──────────────────────────────────────────
 
     def _load_config_to_ui(self):
-        c = self.config
-        self.interval_card.set_values(
-            c.interval_hours, c.interval_minutes,
-            c.interval_seconds, c.interval_ms
-        )
-        self.options_card.set_values(c.mouse_button, c.click_type, c.hotkey_mode)
-        self.location_card.set_values(c.location_mode, c.fixed_x, c.fixed_y, c.restore_cursor)
-        self.repeat_card.set_values(
-            c.repeat_mode, c.repeat_count,
-            c.jitter_enabled, c.jitter_interval_pct, c.jitter_position_px
-        )
-        self.macro_card.set_restore_cursor(c.restore_cursor)
-        self.macro_card.set_hotkey(c.macro_hotkey)
-        if c.macro_steps:
-            self.macro_card.set_steps(c.macro_steps)
-        if hasattr(self, 'hotkey_entry') and self.hotkey_entry:
-            self.hotkey_entry.configure(state="normal")
-            self.hotkey_entry.delete(0, 'end')
-            self.hotkey_entry.insert(0, c.hotkey.upper().strip('<>'))
-            self.hotkey_entry.configure(state="readonly")
-        if hasattr(self, 'macro_hotkey_entry') and self.macro_hotkey_entry:
-            self.macro_hotkey_entry.configure(state="normal")
-            self.macro_hotkey_entry.delete(0, 'end')
-            self.macro_hotkey_entry.insert(0, c.macro_hotkey.upper().strip('<>'))
-            self.macro_hotkey_entry.configure(state="readonly")
-        if hasattr(self, 'hotkey_label') and self.hotkey_label:
-            self.hotkey_label.configure(text=f"[{c.hotkey.upper().strip('<>')}]")
-        if hasattr(self, 'start_button') and self.start_button:
-            self.start_button.configure(text=f"▶  {t('start_clicking').upper()} ({c.hotkey.upper().strip('<>')})")
+        self._is_loading_config = True
+        try:
+            c = self.config
+            self.interval_card.set_values(
+                c.interval_hours, c.interval_minutes,
+                c.interval_seconds, c.interval_ms
+            )
+            self.options_card.set_values(c.mouse_button, c.click_type, c.hotkey_mode)
+            self.location_card.set_values(c.location_mode, c.fixed_x, c.fixed_y, c.restore_cursor)
+            self.repeat_card.set_values(
+                c.repeat_mode, c.repeat_count,
+                c.jitter_enabled, c.jitter_interval_pct, c.jitter_position_px
+            )
+            self.macro_card.set_restore_cursor(c.restore_cursor)
+            self.macro_card.set_hotkey(c.macro_hotkey)
+            self.macro_card.set_repeat(c.macro_repeat_mode, c.macro_repeat_count)
+            self.macro_card.set_steps(c.macro_steps if c.macro_steps else [])
+            if hasattr(self, 'hotkey_entry') and self.hotkey_entry:
+                self.hotkey_entry.configure(state="normal")
+                self.hotkey_entry.delete(0, 'end')
+                self.hotkey_entry.insert(0, c.hotkey.upper().strip('<>'))
+                self.hotkey_entry.configure(state="readonly")
+            if hasattr(self, 'macro_hotkey_entry') and self.macro_hotkey_entry:
+                self.macro_hotkey_entry.configure(state="normal")
+                self.macro_hotkey_entry.delete(0, 'end')
+                self.macro_hotkey_entry.insert(0, c.macro_hotkey.upper().strip('<>'))
+                self.macro_hotkey_entry.configure(state="readonly")
+            if hasattr(self, 'hotkey_label') and self.hotkey_label:
+                self.hotkey_label.configure(text=f"[{c.hotkey.upper().strip('<>')}]")
+            if hasattr(self, 'start_button') and self.start_button:
+                self.start_button.configure(text=f"▶  {t('start_clicking').upper()} ({c.hotkey.upper().strip('<>')})")
+        finally:
+            self._is_loading_config = False
 
     def _collect_config_from_ui(self) -> ClickerConfig:
         hrs, mins, secs, ms = self.interval_card.get_values()
@@ -781,6 +807,7 @@ class AutoClickerApp(ctk.CTk):
         if self._recording_listener:
             self._recording_listener.stop()
             self._recording_listener = None
+        self._save_current_session()
 
     # ─── Pick Location ─────────────────────────────────────────
 
@@ -895,14 +922,52 @@ class AutoClickerApp(ctk.CTk):
         langs = get_available_languages()
         lang_map = {name: code for code, name in langs}
         lang_code = lang_map.get(value, 'en')
-        set_language(lang_code)
-        self.config.language = lang_code
 
-        from tkinter import messagebox
-        messagebox.showinfo(
-            "Language Changed",
-            "Please restart the application for the language change to take full effect."
-        )
+        if lang_code == self.config.language:
+            return
+
+        # 1. Collect current settings accurately before switching
+        self.config = self._collect_config_from_ui()
+        self.config.language = lang_code
+        set_language(lang_code)
+
+        # 2. Save session immediately
+        self._save_current_session()
+
+        # 3. Rebuild UI dynamically in-place (no restart needed!)
+        self._build_ui()
+        self._load_config_to_ui()
+
+        # 4. Stay on SETTINGS tab
+        try:
+            self.tabview.set("SETTINGS")
+        except Exception:
+            pass
+
+    def _restart_app(self):
+        """Cleanly restart the application to apply deep changes like language."""
+        try:
+            self._save_current_session()
+            if hasattr(self, 'instance_server') and self.instance_server:
+                try:
+                    self.instance_server.close()
+                except Exception:
+                    pass
+                self.instance_server = None
+
+            self._on_close()
+
+            time.sleep(0.25)
+
+            from main import get_app_dir, get_app_executable
+            real_exe, extra_args = get_app_executable()
+            app_dir = get_app_dir()
+
+            import subprocess
+            subprocess.Popen([real_exe] + extra_args, cwd=app_dir)
+            os._exit(0)
+        except Exception as e:
+            print(f"Restart error: {e}")
 
     def _on_theme_changed(self, value: str):
         if value == t("dark"):
@@ -911,10 +976,12 @@ class AutoClickerApp(ctk.CTk):
         else:
             self.config.theme = "light"
             ctk.set_appearance_mode("light")
+        self._save_current_session()
 
     def _on_always_on_top_changed(self):
         self.config.always_on_top = self.aot_var.get()
         self.attributes("-topmost", self.config.always_on_top)
+        self._save_current_session()
 
     def _toggle_always_on_top(self):
         new_val = not self.config.always_on_top
@@ -925,6 +992,7 @@ class AutoClickerApp(ctk.CTk):
             fg_color=BG_HOVER if new_val else BG_PANEL_ALT,
             text_color=ACCENT_CYAN if new_val else TEXT_MAIN
         )
+        self._save_current_session()
 
     def _on_hotkey_mode_changed(self, new_mode: str):
         self.config.hotkey_mode = new_mode
@@ -1121,6 +1189,8 @@ class AutoClickerApp(ctk.CTk):
         )
 
     def _save_current_session(self):
+        if getattr(self, '_is_loading_config', False):
+            return
         try:
             config = self._collect_config_from_ui()
             self.profile_manager.save_last_session(config)

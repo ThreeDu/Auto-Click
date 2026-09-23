@@ -15,13 +15,22 @@ class TrayManager:
         
     def _create_icon_image(self):
         import os
-        icon_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'assets', 'icon.png')
-        if os.path.exists(icon_path):
-            try:
-                self.image = Image.open(icon_path).resize((64, 64), Image.Resampling.LANCZOS)
-                return
-            except Exception:
-                pass
+        import sys
+        from main import get_app_dir, get_bundle_dir
+        icon_candidates = [
+            os.path.join(get_bundle_dir(), 'assets', 'icon.png'),
+            os.path.join(get_app_dir(), 'assets', 'icon.png'),
+            os.path.join(os.path.dirname(os.path.abspath(__file__)), 'assets', 'icon.png'),
+            os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'assets', 'icon.png'),
+            os.path.join(os.getcwd(), 'assets', 'icon.png'),
+        ]
+        for icon_path in icon_candidates:
+            if os.path.exists(icon_path):
+                try:
+                    self.image = Image.open(icon_path).resize((64, 64), Image.Resampling.LANCZOS)
+                    return
+                except Exception:
+                    pass
         width = 64
         height = 64
         self.image = Image.new('RGBA', (width, height), (0, 0, 0, 0))

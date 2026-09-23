@@ -29,13 +29,24 @@ class MacroCard(ctk.CTkFrame):
         self.on_stop_macro: Optional[Callable] = None
         self.on_record_start: Optional[Callable] = None
         self.on_record_stop: Optional[Callable] = None
+        self.on_steps_changed: Optional[Callable[[], None]] = None
 
+        self._is_loading = False
         self.is_recording = False
         self.is_running = False
         self.hotkey_display = "F7"
         self.step_rows = []
 
         self._build_ui()
+
+    def _notify_change(self):
+        if getattr(self, '_is_loading', False):
+            return
+        if getattr(self, 'on_steps_changed', None):
+            try:
+                self.on_steps_changed()
+            except Exception:
+                pass
 
     def _build_ui(self):
         # Header + Stats
@@ -197,6 +208,9 @@ class MacroCard(ctk.CTkFrame):
             checkbox_height=16
         )
         self.restore_cursor_cb.pack(side="right")
+        self.repeat_var.trace_add("write", lambda *_: self._notify_change())
+        self.repeat_count_entry.bind("<KeyRelease>", lambda *_: self._notify_change())
+        self.restore_cursor_var.trace_add("write", lambda *_: self._notify_change())
 
         # Run Button
         self.btn_run_stop = ctk.CTkButton(
@@ -243,6 +257,7 @@ class MacroCard(ctk.CTkFrame):
         def action_changed(choice, r_frame=row_frame):
             self._update_row_state(r_frame)
             self._update_stats()
+            self._notify_change()
 
         action_dropdown = ctk.CTkOptionMenu(
             row_frame,
@@ -274,6 +289,7 @@ class MacroCard(ctk.CTkFrame):
         )
         x_entry.insert(0, str(x))
         x_entry.pack(side="left", padx=2)
+        x_entry.bind("<KeyRelease>", lambda e: self._notify_change())
 
         y_entry = ctk.CTkEntry(
             row_frame, width=48, height=24, font=(FONT_MONO, FONT_SIZE_SM, "bold"),
@@ -283,6 +299,7 @@ class MacroCard(ctk.CTkFrame):
         )
         y_entry.insert(0, str(y))
         y_entry.pack(side="left", padx=2)
+        y_entry.bind("<KeyRelease>", lambda e: self._notify_change())
 
         delay_entry = ctk.CTkEntry(
             row_frame, width=56, height=24, font=(FONT_MONO, FONT_SIZE_SM, "bold"),
@@ -292,13 +309,14 @@ class MacroCard(ctk.CTkFrame):
         )
         delay_entry.insert(0, str(delay_ms))
         delay_entry.pack(side="left", padx=2)
-        delay_entry.bind("<KeyRelease>", lambda e: self._update_stats())
+        delay_entry.bind("<KeyRelease>", lambda e: (self._update_stats(), self._notify_change()))
 
         def on_delete(r=row_frame):
             r.destroy()
             self.step_rows = [row for row in self.step_rows if row['frame'] != r]
             self._reindex_rows()
             self._update_stats()
+            self._notify_change()
 
         del_btn = ctk.CTkButton(
             row_frame,
@@ -325,6 +343,7 @@ class MacroCard(ctk.CTkFrame):
         self.step_rows.append(row_data)
         self._update_row_state(row_frame)
         self._update_stats()
+        self._notify_change()
 
     def update_last_step_delay(self, delay_ms: int):
         """Updates the delay of the most recently added step (used during recording)."""
@@ -333,6 +352,7 @@ class MacroCard(ctk.CTkFrame):
             last_row['delay_entry'].delete(0, 'end')
             last_row['delay_entry'].insert(0, str(max(1, delay_ms)))
             self._update_stats()
+            self._notify_change()
 
     def _update_row_state(self, row_frame):
         for row in self.step_rows:
@@ -384,20 +404,25 @@ class MacroCard(ctk.CTkFrame):
         return steps
 
     def set_steps(self, steps: list[dict]):
-        self._clear_all(confirm=False)
-        for s in steps:
-            self.add_step(
-                s.get('action', 'click_left'),
-                s.get('x', 0),
-                s.get('y', 0),
-                s.get('delay_ms', 100)
-            )
+        self._is_loading = True
+        try:
+            self._clear_all(confirm=False)
+            for s in steps:
+                self.add_step(
+                    s.get('action', 'click_left'),
+                    s.get('x', 0),
+                    s.get('y', 0),
+                    s.get('delay_ms', 100)
+                )
+        finally:
+            self._is_loading = False
 
     def _clear_all(self, confirm=True):
         for row in self.step_rows:
             row['frame'].destroy()
         self.step_rows.clear()
         self._update_stats()
+        self._notify_change()
 
     def _toggle_record(self):
         if not self.is_recording:
@@ -420,6 +445,7 @@ class MacroCard(ctk.CTkFrame):
             )
             if self.on_record_stop:
                 self.on_record_stop()
+            self._notify_change()
 
     def _toggle_run(self):
         if not self.is_running:
@@ -438,9 +464,23 @@ class MacroCard(ctk.CTkFrame):
         except ValueError:
             return 1
 
+    def set_repeat(self, mode: str, count: int):
+        self._is_loading = True
+        try:
+            if mode in ("count", "infinite"):
+                self.repeat_var.set(mode)
+            self.repeat_count_entry.delete(0, 'end')
+            self.repeat_count_entry.insert(0, str(max(1, count)))
+        finally:
+            self._is_loading = False
+
     def set_hotkey(self, hotkey: str):
-        self.hotkey_display = hotkey.upper().strip('<>')
-        self._update_run_button_text()
+        self._is_loading = True
+        try:
+            self.hotkey_display = hotkey.upper().strip('<>')
+            self._update_run_button_text()
+        finally:
+            self._is_loading = False
 
     def set_running(self, is_running: bool):
         self.is_running = is_running
@@ -466,4 +506,8 @@ class MacroCard(ctk.CTkFrame):
         return self.restore_cursor_var.get()
 
     def set_restore_cursor(self, value: bool) -> None:
-        self.restore_cursor_var.set(value)
+        self._is_loading = True
+        try:
+            self.restore_cursor_var.set(value)
+        finally:
+            self._is_loading = False

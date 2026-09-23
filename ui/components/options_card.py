@@ -39,6 +39,9 @@ class OptionsCard(ctk.CTkFrame):
         left_box = ctk.CTkFrame(body_row, fg_color="transparent")
         left_box.pack(side="left")
 
+        self._canonical_button = "left"
+        self._canonical_click_type = "single"
+
         self.btn_var = ctk.StringVar(value="left")
         self.btn_menu = ctk.CTkOptionMenu(
             left_box,
@@ -55,7 +58,8 @@ class OptionsCard(ctk.CTkFrame):
             dropdown_hover_color=BG_HOVER,
             dropdown_text_color=TEXT_MAIN,
             dropdown_font=(FONT_FAMILY, FONT_SIZE_SM),
-            corner_radius=RADIUS_CONTROL
+            corner_radius=RADIUS_CONTROL,
+            command=self._on_btn_selected
         )
         self.btn_menu.pack(side="left", padx=(0, 6))
 
@@ -75,7 +79,8 @@ class OptionsCard(ctk.CTkFrame):
             dropdown_hover_color=BG_HOVER,
             dropdown_text_color=TEXT_MAIN,
             dropdown_font=(FONT_FAMILY, FONT_SIZE_SM),
-            corner_radius=RADIUS_CONTROL
+            corner_radius=RADIUS_CONTROL,
+            command=self._on_type_selected
         )
         self.type_menu.pack(side="left")
 
@@ -116,38 +121,51 @@ class OptionsCard(ctk.CTkFrame):
         )
         self.mode_hold.pack(side="left")
 
+    def _on_btn_selected(self, choice: str):
+        choice_lower = choice.strip().lower()
+        if choice_lower in ('right', 'phải'):
+            self._canonical_button = 'right'
+        elif choice_lower in ('middle', 'giữa'):
+            self._canonical_button = 'middle'
+        else:
+            self._canonical_button = 'left'
+
+    def _on_type_selected(self, choice: str):
+        choice_lower = choice.strip().lower()
+        if choice_lower in ('double', 'đúp'):
+            self._canonical_click_type = 'double'
+        elif choice_lower in ('triple', 'ba'):
+            self._canonical_click_type = 'triple'
+        else:
+            self._canonical_click_type = 'single'
+
     def _on_mode_radio_changed(self):
         if self.on_mode_changed:
             self.on_mode_changed(self.mode_var.get())
 
     def get_button(self) -> str:
-        val = self.btn_var.get()
-        if val == t('right'): return 'right'
-        if val == t('middle'): return 'middle'
+        if hasattr(self, '_canonical_button'):
+            return self._canonical_button
+        val = self.btn_var.get().strip().lower()
+        if val in ('right', 'phải'): return 'right'
+        if val in ('middle', 'giữa'): return 'middle'
         return 'left'
 
     def get_click_type(self) -> str:
-        val = self.type_var.get()
-        if val == t('double'): return 'double'
-        if val == t('triple'): return 'triple'
+        if hasattr(self, '_canonical_click_type'):
+            return self._canonical_click_type
+        val = self.type_var.get().strip().lower()
+        if val in ('double', 'đúp'): return 'double'
+        if val in ('triple', 'ba'): return 'triple'
         return 'single'
 
     def get_mode(self) -> str:
         return self.mode_var.get()
 
     def set_values(self, button: str, click_type: str, mode: str) -> None:
-        if button == 'right':
-            self.btn_var.set(t('right'))
-        elif button == 'middle':
-            self.btn_var.set(t('middle'))
-        else:
-            self.btn_var.set(t('left'))
+        self._canonical_button = button if button in ('left', 'right', 'middle') else 'left'
+        self._canonical_click_type = click_type if click_type in ('single', 'double', 'triple') else 'single'
 
-        if click_type == 'double':
-            self.type_var.set(t('double'))
-        elif click_type == 'triple':
-            self.type_var.set(t('triple'))
-        else:
-            self.type_var.set(t('single'))
-
+        self.btn_var.set(t(self._canonical_button))
+        self.type_var.set(t(self._canonical_click_type))
         self.mode_var.set(mode)
