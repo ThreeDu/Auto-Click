@@ -24,12 +24,13 @@ class RepeatCard(ctk.CTkFrame):
         )
 
         # Header
-        ctk.CTkLabel(
+        self.title_label = ctk.CTkLabel(
             self,
             text=f"{t('repeat_title').upper()} & JITTER",
             font=(FONT_FAMILY, FONT_SIZE_SM, "bold"),
             text_color=TEXT_MUTED
-        ).pack(anchor="w", padx=10, pady=(8, 4))
+        )
+        self.title_label.pack(anchor="w", padx=10, pady=(8, 4))
 
         # Row 1: Repeat Rule
         row1 = ctk.CTkFrame(self, fg_color="transparent")
@@ -178,3 +179,9 @@ class RepeatCard(ctk.CTkFrame):
 
         self.j_pos_slider.set(jitter_position)
         self.update_j_pos_val(jitter_position)
+
+    def update_texts(self):
+        """Update all translatable text labels in-place (no widget destruction)."""
+        self.title_label.configure(text=f"{t('repeat_title').upper()} & JITTER")
+        self.infinite_rb.configure(text=t('until_stopped'))
+        self.count_rb.configure(text=f"{t('repeat_times')}:")

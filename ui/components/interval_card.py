@@ -154,3 +154,7 @@ class IntervalCard(ctk.CTkFrame):
             entry.delete(0, 'end')
             entry.insert(0, str(val))
         self._on_entry_changed()
+
+    def update_texts(self):
+        """Update all translatable text labels in-place (no widget destruction)."""
+        self.title_label.configure(text=t('interval_title').upper())

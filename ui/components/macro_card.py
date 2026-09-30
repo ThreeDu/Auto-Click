@@ -148,7 +148,7 @@ class MacroCard(ctk.CTkFrame):
 
         self.repeat_var = ctk.StringVar(value="count")
 
-        rb_count = ctk.CTkRadioButton(
+        self.rb_count = ctk.CTkRadioButton(
             loop_frame,
             text=f"{t('repeat')}:",
             variable=self.repeat_var,
@@ -160,7 +160,7 @@ class MacroCard(ctk.CTkFrame):
             radiobutton_width=16,
             radiobutton_height=16
         )
-        rb_count.pack(side="left", padx=(0, 4))
+        self.rb_count.pack(side="left", padx=(0, 4))
 
         vcmd = (self.register(self.validate_number), '%P')
         self.repeat_count_entry = ctk.CTkEntry(
@@ -180,7 +180,7 @@ class MacroCard(ctk.CTkFrame):
         self.repeat_count_entry.insert(0, "1")
         self.repeat_count_entry.pack(side="left", padx=(0, 10))
 
-        rb_infinite = ctk.CTkRadioButton(
+        self.rb_infinite = ctk.CTkRadioButton(
             loop_frame,
             text=f"{t('repeat')} (∞ Loop)",
             variable=self.repeat_var,
@@ -192,7 +192,7 @@ class MacroCard(ctk.CTkFrame):
             radiobutton_width=16,
             radiobutton_height=16
         )
-        rb_infinite.pack(side="left")
+        self.rb_infinite.pack(side="left")
 
         # Restore Cursor Checkbox
         self.restore_cursor_var = ctk.BooleanVar(value=False)
@@ -511,3 +511,17 @@ class MacroCard(ctk.CTkFrame):
             self.restore_cursor_var.set(value)
         finally:
             self._is_loading = False
+
+    def update_texts(self):
+        """Update all translatable text labels in-place (no widget destruction)."""
+        self.title_label.configure(text=t('macro_title').upper())
+        self.btn_add.configure(text=f"+ {t('add_step')}")
+        self.btn_clear.configure(text=t('clear_all'))
+        self.restore_cursor_cb.configure(text=t('restore_cursor'))
+        self.rb_count.configure(text=f"{t('repeat')}:")
+        self.rb_infinite.configure(text=f"{t('repeat')} (∞ Loop)")
+        if not self.is_recording:
+            self.btn_record.configure(text=f"● {t('record')}")
+        else:
+            self.btn_record.configure(text=f"■ {t('stop')}")
+        self._update_run_button_text()

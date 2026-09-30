@@ -30,12 +30,13 @@ class LocationCard(ctk.CTkFrame):
         header = ctk.CTkFrame(self, fg_color="transparent")
         header.pack(fill="x", padx=10, pady=(8, 4))
 
-        ctk.CTkLabel(
+        self.title_label = ctk.CTkLabel(
             header,
             text=t('location_title').upper(),
             font=(FONT_FAMILY, FONT_SIZE_SM, "bold"),
             text_color=TEXT_MUTED
-        ).pack(side="left")
+        )
+        self.title_label.pack(side="left")
 
         self.preview_label = ctk.CTkLabel(
             header,
@@ -162,7 +163,16 @@ class LocationCard(ctk.CTkFrame):
             self.preview_label.configure(text=f"{x}, {y}")
         except Exception:
             pass
-        self.after(100, self.update_pos)
+        self._pos_after_id = self.after(100, self.update_pos)
+
+    def destroy(self):
+        """Cancel position polling timer before destroying widget."""
+        if hasattr(self, '_pos_after_id'):
+            try:
+                self.after_cancel(self._pos_after_id)
+            except Exception:
+                pass
+        super().destroy()
 
     def get_mode(self) -> str:
         return self.mode_var.get()
@@ -195,3 +205,11 @@ class LocationCard(ctk.CTkFrame):
             self.restore_cursor_var.set(restore_cursor)
 
         self.toggle_fixed_inputs()
+
+    def update_texts(self):
+        """Update all translatable text labels in-place (no widget destruction)."""
+        self.title_label.configure(text=t('location_title').upper())
+        self.cursor_rb.configure(text=t('follow_cursor'))
+        self.fixed_rb.configure(text=t('fixed_coordinate'))
+        self.pick_btn.configure(text=f"🎯 {t('pick_location')}")
+        self.restore_cursor_cb.configure(text=t('restore_cursor'))

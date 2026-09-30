@@ -116,7 +116,7 @@ class AutoClickerApp(ctk.CTk):
         self._build_ui()
         self._setup_engines()
         self._setup_hotkeys()
-        self._setup_tray()
+        self.after(100, self._setup_tray)  # Defer tray to after window appears
         self._load_config_to_ui()
         self._start_status_updater()
 
@@ -338,7 +338,8 @@ class AutoClickerApp(ctk.CTk):
 
         row1 = ctk.CTkFrame(pref_card, fg_color="transparent")
         row1.pack(fill="x", padx=10, pady=(0, 6))
-        ctk.CTkLabel(row1, text=t('language'), font=(FONT_FAMILY, 12), text_color=TEXT_MAIN).pack(side="left")
+        self._lang_label = ctk.CTkLabel(row1, text=t('language'), font=(FONT_FAMILY, 12), text_color=TEXT_MAIN)
+        self._lang_label.pack(side="left")
 
         langs = get_available_languages()
         lang_names = [name for _, name in langs]
@@ -356,7 +357,8 @@ class AutoClickerApp(ctk.CTk):
 
         row2 = ctk.CTkFrame(pref_card, fg_color="transparent")
         row2.pack(fill="x", padx=10, pady=(0, 8))
-        ctk.CTkLabel(row2, text=t('theme'), font=(FONT_FAMILY, 12), text_color=TEXT_MAIN).pack(side="left")
+        self._theme_label = ctk.CTkLabel(row2, text=t('theme'), font=(FONT_FAMILY, 12), text_color=TEXT_MAIN)
+        self._theme_label.pack(side="left")
 
         self.theme_menu = ctk.CTkOptionMenu(
             row2, values=[t("dark"), t("light")], height=26, font=(FONT_FAMILY, 11, "bold"),
@@ -926,23 +928,47 @@ class AutoClickerApp(ctk.CTk):
         if lang_code == self.config.language:
             return
 
-        # 1. Collect current settings accurately before switching
-        self.config = self._collect_config_from_ui()
+        # Update language setting
         self.config.language = lang_code
         set_language(lang_code)
 
-        # 2. Save session immediately
+        # In-place text update — no widget destruction!
+        self._update_all_texts()
+
+        # Save session
         self._save_current_session()
 
-        # 3. Rebuild UI dynamically in-place (no restart needed!)
-        self._build_ui()
-        self._load_config_to_ui()
+    def _update_all_texts(self):
+        """Update all translatable UI text in-place without rebuilding widgets."""
+        # Component cards
+        self.interval_card.update_texts()
+        self.options_card.update_texts()
+        self.location_card.update_texts()
+        self.repeat_card.update_texts()
+        self.macro_card.update_texts()
 
-        # 4. Stay on SETTINGS tab
-        try:
-            self.tabview.set("SETTINGS")
-        except Exception:
-            pass
+        # Start/stop button
+        hk = self.config.hotkey.upper().strip('<>')
+        if self.clicker_engine.is_running:
+            self.start_button.configure(
+                text=f"■  {t('stop_clicking').upper()} ({hk})"
+            )
+        else:
+            self.start_button.configure(
+                text=f"▶  {t('start_clicking').upper()} ({hk})"
+            )
+
+        # Settings tab labels
+        if hasattr(self, '_lang_label'):
+            self._lang_label.configure(text=t('language'))
+        if hasattr(self, '_theme_label'):
+            self._theme_label.configure(text=t('theme'))
+        if hasattr(self, 'theme_menu'):
+            self.theme_menu.configure(values=[t("dark"), t("light")])
+            current_theme_name = t("dark") if self.config.theme == "dark" else t("light")
+            self.theme_menu.set(current_theme_name)
+        if hasattr(self, 'reset_hk_btn'):
+            self.reset_hk_btn.configure(text=t('reset_hotkeys').upper())
 
     def _restart_app(self):
         """Cleanly restart the application to apply deep changes like language."""

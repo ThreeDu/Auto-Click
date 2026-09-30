@@ -65,6 +65,13 @@ class POINT(ctypes.Structure):
         ("y", wintypes.LONG)
     ]
 
+def _precise_hold(duration_seconds: float):
+    """Sub-millisecond precision hold using perf_counter busy-wait.
+    Used for short hold durations (1-20ms) where time.sleep is too inaccurate."""
+    target = time.perf_counter() + duration_seconds
+    while time.perf_counter() < target:
+        pass
+
 def send_click(button: str = 'left', click_type: str = 'single', hold_ms: int = 0) -> None:
     """
     Sends mouse down and up events.
@@ -102,7 +109,7 @@ def send_click(button: str = 'left', click_type: str = 'single', hold_ms: int = 
         if hold_ms > 0:
             pDown = (INPUT * 1)(down_input)
             ctypes.windll.user32.SendInput(1, pDown, cbSize)
-            time.sleep(hold_ms / 1000.0)
+            _precise_hold(hold_ms / 1000.0)
             pUp = (INPUT * 1)(up_input)
             ctypes.windll.user32.SendInput(1, pUp, cbSize)
         else:

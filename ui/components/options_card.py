@@ -24,12 +24,13 @@ class OptionsCard(ctk.CTkFrame):
         )
 
         # Header
-        ctk.CTkLabel(
+        self.title_label = ctk.CTkLabel(
             self,
             text=t('options_title').upper(),
             font=(FONT_FAMILY, FONT_SIZE_SM, "bold"),
             text_color=TEXT_MUTED
-        ).pack(anchor="w", padx=10, pady=(8, 4))
+        )
+        self.title_label.pack(anchor="w", padx=10, pady=(8, 4))
 
         # Main controls row: Dropdowns on left, Mode Radios on right
         body_row = ctk.CTkFrame(self, fg_color="transparent")
@@ -132,7 +133,7 @@ class OptionsCard(ctk.CTkFrame):
 
     def _on_type_selected(self, choice: str):
         choice_lower = choice.strip().lower()
-        if choice_lower in ('double', 'đúp'):
+        if choice_lower in ('double', 'đúp', 'kép'):
             self._canonical_click_type = 'double'
         elif choice_lower in ('triple', 'ba'):
             self._canonical_click_type = 'triple'
@@ -155,7 +156,7 @@ class OptionsCard(ctk.CTkFrame):
         if hasattr(self, '_canonical_click_type'):
             return self._canonical_click_type
         val = self.type_var.get().strip().lower()
-        if val in ('double', 'đúp'): return 'double'
+        if val in ('double', 'đúp', 'kép'): return 'double'
         if val in ('triple', 'ba'): return 'triple'
         return 'single'
 
@@ -169,3 +170,13 @@ class OptionsCard(ctk.CTkFrame):
         self.btn_var.set(t(self._canonical_button))
         self.type_var.set(t(self._canonical_click_type))
         self.mode_var.set(mode)
+
+    def update_texts(self):
+        """Update all translatable text labels in-place (no widget destruction)."""
+        self.title_label.configure(text=t('options_title').upper())
+        self.btn_menu.configure(values=[t('left'), t('right'), t('middle')])
+        self.btn_menu.set(t(self._canonical_button))
+        self.type_menu.configure(values=[t('single'), t('double'), t('triple')])
+        self.type_menu.set(t(self._canonical_click_type))
+        self.mode_toggle.configure(text=t('toggle'))
+        self.mode_hold.configure(text=t('hold'))

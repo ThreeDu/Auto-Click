@@ -61,9 +61,10 @@ class ClickerEngine:
             self._thread = None
 
     def _click_loop(self):
-        """Main click loop."""
+        """Main click loop with drift-compensated timing."""
         setup_timer_resolution()
         try:
+            next_click_time = time.perf_counter()
             while not self._stop_event.is_set():
                 # Position
                 orig_x, orig_y = get_cursor_pos()
@@ -77,9 +78,10 @@ class ClickerEngine:
                     
                 if self.fixed_position or self.jitter_enabled:
                     move_cursor(x, y)
+                    high_precision_sleep(0.002, stop_event=self._stop_event)
                     
                 # Click
-                send_click(button=self.button, click_type=self.click_type)
+                send_click(button=self.button, click_type=self.click_type, hold_ms=2)
 
                 # Restore cursor position if enabled
                 if self.restore_cursor and (self.fixed_position or self.jitter_enabled):
@@ -95,14 +97,19 @@ class ClickerEngine:
                 if self.repeat_count > 0 and self.click_count >= self.repeat_count:
                     break
                     
-                # Sleep
+                # Drift-compensated sleep
                 if not self._stop_event.is_set():
                     sleep_ms = self.interval_ms
                     if self.jitter_enabled and self.jitter_interval_pct > 0:
                         variation = sleep_ms * self.jitter_interval_pct
                         sleep_ms = random.uniform(sleep_ms - variation, sleep_ms + variation)
-                        
-                    high_precision_sleep(max(0, sleep_ms) / 1000.0, stop_event=self._stop_event)
+                    
+                    next_click_time += max(1, sleep_ms) / 1000.0
+                    remaining = next_click_time - time.perf_counter()
+                    if remaining > 0:
+                        high_precision_sleep(remaining, stop_event=self._stop_event)
+                    else:
+                        next_click_time = time.perf_counter()
 
                     
         finally:

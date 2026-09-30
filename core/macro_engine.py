@@ -40,6 +40,7 @@ class MacroEngine:
         
         self._stop_event.clear()
         self.total_iterations = 0
+        self._active_steps = [MacroStep(**s.__dict__) for s in self.steps]
         self._thread = threading.Thread(target=self._macro_loop, daemon=True)
         self._thread.start()
 
@@ -56,9 +57,9 @@ class MacroEngine:
         setup_timer_resolution()
         try:
             while not self._stop_event.is_set():
-                total_steps = len(self.steps)
+                total_steps = len(self._active_steps)
                 
-                for i, step in enumerate(self.steps):
+                for i, step in enumerate(self._active_steps):
                     if self._stop_event.is_set():
                         break
                         
@@ -73,19 +74,24 @@ class MacroEngine:
                         if self.restore_cursor:
                             orig_x, orig_y = get_cursor_pos()
                             move_cursor(step.x, step.y)
-                            high_precision_sleep(0.005, stop_event=self._stop_event)
-                            send_click(button=button, click_type='single', hold_ms=12)
                             high_precision_sleep(0.015, stop_event=self._stop_event)
+                            # Re-confirm cursor position before clicking
+                            move_cursor(step.x, step.y)
+                            send_click(button=button, click_type='single', hold_ms=20)
+                            high_precision_sleep(0.020, stop_event=self._stop_event)
                             move_cursor(orig_x, orig_y)
                         else:
                             move_cursor(step.x, step.y)
-                            high_precision_sleep(0.005, stop_event=self._stop_event)
-                            send_click(button=button, click_type='single', hold_ms=12)
+                            high_precision_sleep(0.015, stop_event=self._stop_event)
+                            # Re-confirm cursor position before clicking
+                            move_cursor(step.x, step.y)
+                            send_click(button=button, click_type='single', hold_ms=20)
                         
                     if step.delay_ms > 0:
                         high_precision_sleep(step.delay_ms / 1000.0, stop_event=self._stop_event)
-                    elif i == total_steps - 1:
-                        # Safety settle time for the last step so it is not cut off by loop exit/repeat
+                    
+                    # Always add safety settle for last step to ensure click is processed
+                    if i == total_steps - 1:
                         high_precision_sleep(0.025, stop_event=self._stop_event)
                         
                 self.total_iterations += 1

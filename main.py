@@ -96,23 +96,23 @@ def get_app_executable() -> tuple[str, list[str]]:
     else:
         return sys.executable, sys.argv[1:]
 
-    if sys.argv and sys.argv[0] and os.path.exists(sys.argv[0]):
-        candidate = os.path.abspath(sys.argv[0])
-        temp_dir = os.path.abspath(os.environ.get("TEMP", "")).lower()
-        if not temp_dir or temp_dir not in candidate.lower():
-            return candidate, sys.argv[1:]
-
-    exe_name = os.path.basename(sys.executable).lower()
-    if exe_name.startswith("python"):
-        return sys.executable, sys.argv
-    else:
-        return sys.executable, sys.argv[1:]
-
 
 import socket
 import threading
 
 SINGLE_INSTANCE_PORT = 47829
+_MUTEX_NAME = "AutoClicker_SingleInstance_Mutex_v1"
+_ERROR_ALREADY_EXISTS = 0xB7
+
+
+def acquire_single_instance_mutex():
+    """Try to acquire a named mutex. Returns handle if first instance, None if already running."""
+    kernel32 = ctypes.windll.kernel32
+    mutex = kernel32.CreateMutexW(None, False, _MUTEX_NAME)
+    if kernel32.GetLastError() == _ERROR_ALREADY_EXISTS:
+        kernel32.CloseHandle(mutex)
+        return None
+    return mutex
 
 
 def try_signal_existing_instance() -> bool:
@@ -157,8 +157,11 @@ def start_instance_server(app):
 
 def main():
     """Application entry point."""
-    # Check if another instance is already running
-    if try_signal_existing_instance():
+    # Fast mutex check for single instance (< 0.05ms vs 300ms socket timeout)
+    mutex_handle = acquire_single_instance_mutex()
+    if mutex_handle is None:
+        # Another instance running — try to signal it to show its window
+        try_signal_existing_instance()
         print("AutoClicker is already running. Restored existing window.")
         sys.exit(0)
 
