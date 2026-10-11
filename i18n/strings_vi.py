@@ -49,6 +49,7 @@ STRINGS = {
     "delay": "Độ trễ (ms)",
     "add_step": "Thêm bước",
     "record": "Ghi hình",
+    "real_delay": "Delay thực",
     "clear_all": "Xóa tất cả",
     "run_macro": "Chạy Macro",
     "stop_macro": "Dừng Macro",

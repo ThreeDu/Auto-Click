@@ -49,6 +49,7 @@ STRINGS = {
     "delay": "Delay (ms)",
     "add_step": "Add Step",
     "record": "Record",
+    "real_delay": "Real delay",
     "clear_all": "Clear All",
     "run_macro": "Run Macro",
     "stop_macro": "Stop Macro",

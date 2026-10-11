@@ -782,7 +782,7 @@ class AutoClickerApp(ctk.CTk):
                         return
 
                     now = time.time()
-                    if self._last_record_time is not None:
+                    if self.macro_card.is_record_real_delay() and self._last_record_time is not None:
                         elapsed_ms = max(50, min(30000, int((now - self._last_record_time) * 1000)))
                         self.after(0, lambda d=elapsed_ms: self.macro_card.update_last_step_delay(d))
                     self._last_record_time = now
@@ -793,8 +793,9 @@ class AutoClickerApp(ctk.CTk):
                         mouse.Button.middle: 'click_middle',
                     }
                     action = button_map.get(button, 'click_left')
+                    default_delay = self.macro_card.get_default_record_delay()
                     self.after(0, lambda: self.macro_card.add_step(
-                        action, int(x), int(y), 100
+                        action, int(x), int(y), default_delay
                     ))
 
             self._recording_listener = mouse.Listener(on_click=on_click)

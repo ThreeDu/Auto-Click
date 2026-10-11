@@ -103,6 +103,20 @@ class MacroCard(ctk.CTkFrame):
         )
         self.btn_record.pack(side="left", padx=(0, 4))
 
+        self.record_real_delay_var = ctk.BooleanVar(value=False)
+        self.record_real_cb = ctk.CTkCheckBox(
+            toolbar,
+            text=t('real_delay'),
+            variable=self.record_real_delay_var,
+            font=(FONT_FAMILY, FONT_SIZE_XS),
+            text_color=TEXT_MUTED,
+            fg_color=ACCENT_AMBER,
+            hover_color=ACCENT_AMBER,
+            checkbox_width=14,
+            checkbox_height=14
+        )
+        self.record_real_cb.pack(side="left", padx=(4, 4))
+
         self.btn_clear = ctk.CTkButton(
             toolbar,
             text=t('clear_all'),
@@ -512,6 +526,28 @@ class MacroCard(ctk.CTkFrame):
         finally:
             self._is_loading = False
 
+    def is_record_real_delay(self) -> bool:
+        """Returns True if real time between clicks should be recorded, False for default 100ms."""
+        if hasattr(self, 'record_real_delay_var'):
+            return self.record_real_delay_var.get()
+        return False
+
+    def get_default_record_delay(self) -> int:
+        """Returns the default delay (ms) for recorded steps."""
+        return 100
+
+    def set_all_delays(self, delay_ms: int):
+        """Set the delay for all current steps at once."""
+        self._is_loading = True
+        try:
+            for row in self.step_rows:
+                row['delay_entry'].delete(0, 'end')
+                row['delay_entry'].insert(0, str(max(0, delay_ms)))
+            self._update_stats()
+            self._notify_change()
+        finally:
+            self._is_loading = False
+
     def update_texts(self):
         """Update all translatable text labels in-place (no widget destruction)."""
         self.title_label.configure(text=t('macro_title').upper())
@@ -520,6 +556,8 @@ class MacroCard(ctk.CTkFrame):
         self.restore_cursor_cb.configure(text=t('restore_cursor'))
         self.rb_count.configure(text=f"{t('repeat')}:")
         self.rb_infinite.configure(text=f"{t('repeat')} (∞ Loop)")
+        if hasattr(self, 'record_real_cb'):
+            self.record_real_cb.configure(text=t('real_delay'))
         if not self.is_recording:
             self.btn_record.configure(text=f"● {t('record')}")
         else:

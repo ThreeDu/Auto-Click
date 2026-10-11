@@ -66,6 +66,13 @@ class MacroEngine:
                     if self.on_step_update:
                         self.on_step_update(i + 1, total_steps)
                         
+                    # Pre-action delay: wait configured delay BEFORE executing the step
+                    if step.delay_ms > 0:
+                        high_precision_sleep(step.delay_ms / 1000.0, stop_event=self._stop_event)
+
+                    if self._stop_event.is_set():
+                        break
+
                     if step.action == 'move':
                         if not self.restore_cursor:
                             move_cursor(step.x, step.y)
@@ -86,9 +93,6 @@ class MacroEngine:
                             # Re-confirm cursor position before clicking
                             move_cursor(step.x, step.y)
                             send_click(button=button, click_type='single', hold_ms=20)
-                        
-                    if step.delay_ms > 0:
-                        high_precision_sleep(step.delay_ms / 1000.0, stop_event=self._stop_event)
                     
                     # Always add safety settle for last step to ensure click is processed
                     if i == total_steps - 1:
