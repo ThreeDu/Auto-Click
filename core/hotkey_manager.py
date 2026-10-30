@@ -94,21 +94,30 @@ class HotkeyManager:
                     self._listener = keyboard.GlobalHotKeys(hotkeys)
                     self._listener.start()
             elif self.mode == 'hold':
-                target_norm = normalize_hotkey(self.hotkey).strip('<>').lower()
+                # Parse into canonical keys so combos like ctrl+shift+a work, not just single keys
+                target = set(keyboard.HotKey.parse(normalize_hotkey(self.hotkey)))
+                pressed = set()
+                active = False
 
                 def on_press(key):
+                    nonlocal active
                     try:
-                        k_name = getattr(key, 'name', None) or getattr(key, 'char', None)
-                        if k_name and str(k_name).lower() == target_norm:
+                        pressed.add(self._listener.canonical(key))
+                        # Key auto-repeat fires on_press repeatedly; only start once per hold
+                        if not active and target <= pressed:
+                            active = True
                             if self.on_hold_start:
                                 self.on_hold_start()
                     except Exception:
                         pass
 
                 def on_release(key):
+                    nonlocal active
                     try:
-                        k_name = getattr(key, 'name', None) or getattr(key, 'char', None)
-                        if k_name and str(k_name).lower() == target_norm:
+                        k = self._listener.canonical(key)
+                        pressed.discard(k)
+                        if active and k in target:
+                            active = False
                             if self.on_hold_stop:
                                 self.on_hold_stop()
                     except Exception:

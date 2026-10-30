@@ -48,15 +48,24 @@ class ClickerConfig:
         filtered_data = {k: v for k, v in data.items() if k in field_names}
         return cls(**filtered_data)
 
-    def save_to_file(self, path: str):
-        """Write the configuration to a JSON file."""
+    def save_to_file(self, path: str) -> bool:
+        """Write the configuration to a JSON file. Returns False on failure."""
+        tmp_path = path + '.tmp'
         try:
             # Ensure the directory exists
             os.makedirs(os.path.dirname(os.path.abspath(path)), exist_ok=True)
-            with open(path, 'w', encoding='utf-8') as f:
+            # Write to a temp file then swap, so a crash mid-write never leaves a half-written config
+            with open(tmp_path, 'w', encoding='utf-8') as f:
                 json.dump(self.to_dict(), f, indent=4)
+            os.replace(tmp_path, path)
+            return True
         except Exception as e:
             print(f"Error saving config to {path}: {e}")
+            try:
+                os.remove(tmp_path)
+            except OSError:
+                pass
+            return False
 
     @classmethod
     def load_from_file(cls, path: str) -> 'ClickerConfig':

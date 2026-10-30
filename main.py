@@ -97,6 +97,22 @@ def get_app_executable() -> tuple[str, list[str]]:
         return sys.executable, sys.argv[1:]
 
 
+def redirect_output_to_log(app_dir: str):
+    """The windowed exe has no console, so send print()/tracebacks to autoclicker.log instead of losing them."""
+    if globals().get("__compiled__") is None and sys.stdout is not None:
+        return  # running from a terminal: keep console output
+    log_path = os.path.join(app_dir, 'autoclicker.log')
+    try:
+        # Start fresh once the log passes 1 MB so it can't grow forever
+        mode = 'w' if os.path.exists(log_path) and os.path.getsize(log_path) > 1_000_000 else 'a'
+        log_file = open(log_path, mode, encoding='utf-8', buffering=1)
+    except OSError:
+        return
+    sys.stdout = sys.stderr = log_file
+    import time
+    print(f"\n=== AutoClicker started {time.strftime('%Y-%m-%d %H:%M:%S')} ===")
+
+
 import socket
 import threading
 
@@ -176,6 +192,8 @@ def main():
     app_dir = get_app_dir()
     if app_dir not in sys.path:
         sys.path.insert(0, app_dir)
+
+    redirect_output_to_log(app_dir)
 
     # Import after path setup
     from config import ClickerConfig

@@ -21,6 +21,17 @@ class ProfileManager:
             self.profiles_dir = os.path.join(appdata, 'AutoClicker', 'profiles')
             os.makedirs(self.profiles_dir, exist_ok=True)
             
+    @staticmethod
+    def is_valid_name(name: str) -> bool:
+        """True if name is safe as a Windows filename and doesn't clash with internal files."""
+        name = name.strip()
+        if not name or len(name) > 64 or name.startswith('_') or name.endswith('.'):
+            return False
+        if any(c in '<>:"/\\|?*' or ord(c) < 32 for c in name):
+            return False
+        reserved = {'con', 'prn', 'aux', 'nul'} | {f'{p}{i}' for p in ('com', 'lpt') for i in range(1, 10)}
+        return name.split('.')[0].lower() not in reserved
+
     def list_profiles(self) -> list[str]:
         """Returns a list of profile names (without .json extension)."""
         profiles = []
@@ -30,10 +41,12 @@ class ProfileManager:
                     profiles.append(file[:-5])
         return sorted(profiles)
         
-    def save_profile(self, name: str, config: ClickerConfig):
-        """Saves a profile to the profiles_dir/name.json."""
-        path = os.path.join(self.profiles_dir, f"{name}.json")
-        config.save_to_file(path)
+    def save_profile(self, name: str, config: ClickerConfig) -> bool:
+        """Saves a profile to the profiles_dir/name.json. Returns False if the name is invalid or the write fails."""
+        if not self.is_valid_name(name):
+            return False
+        path = os.path.join(self.profiles_dir, f"{name.strip()}.json")
+        return config.save_to_file(path)
         
     def load_profile(self, name: str) -> ClickerConfig:
         """Loads a profile from the profiles directory."""

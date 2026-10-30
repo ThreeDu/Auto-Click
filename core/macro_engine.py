@@ -50,8 +50,9 @@ class MacroEngine:
             
         self._stop_event.set()
         if self._thread and self._thread != threading.current_thread():
+            # Don't drop the reference if the thread is still alive: is_running must stay True
+            # until it exits, or start() would launch a second loop and clear the old one's stop event
             self._thread.join(timeout=0.5)
-            self._thread = None
 
     def _macro_loop(self):
         setup_timer_resolution()

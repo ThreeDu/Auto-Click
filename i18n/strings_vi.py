@@ -94,6 +94,8 @@ STRINGS = {
     "confirm_delete": "Bạn có chắc chắn muốn xóa hồ sơ này không?",
     "profile_name_prompt": "Nhập tên hồ sơ:",
     "profile_saved": "Đã lưu hồ sơ thành công.",
+    "invalid_profile_name": "Tên hồ sơ không hợp lệ. Không dùng \\ / : * ? \" < > |, dấu \"_\" ở đầu hoặc tên hệ thống như CON.",
+    "profile_save_failed": "Không thể lưu hồ sơ. Xem file log để biết chi tiết.",
     "profile_deleted": "Đã xóa hồ sơ.",
     "pick_location_instruction": "Di chuyển con trỏ tới vị trí mong muốn và nhấn Enter hoặc click chuột phải để chọn.",
     "restore_cursor": "Giữ nguyên chuột",

@@ -27,62 +27,6 @@ from ui.theme import (
 )
 
 
-class LocationPickerBanner(ctk.CTkToplevel):
-    """Floating HUD banner showing instructions while picking screen coordinates."""
-
-    def __init__(self, master, cancel_callback):
-        super().__init__(master)
-        self.cancel_callback = cancel_callback
-
-        self.overrideredirect(True)
-        self.attributes('-topmost', True)
-        self.attributes('-alpha', 0.96)
-
-        try:
-            screen_w = self.winfo_screenwidth()
-            banner_w = 460
-            x = max(10, (screen_w - banner_w) // 2)
-            self.geometry(f"{banner_w}x40+{x}+24")
-        except Exception:
-            self.geometry("460x40+200+24")
-
-        container = ctk.CTkFrame(
-            self,
-            fg_color=BG_PANEL,
-            border_color=ACCENT_CYAN,
-            border_width=1,
-            corner_radius=RADIUS_CONTROL
-        )
-        container.pack(fill="both", expand=True)
-
-        msg = (
-            "🎯 CLICK CHUỘT TRÁI để chọn vị trí  ·  [Esc] để hủy"
-            if get_language() == "vi" else
-            "🎯 LEFT-CLICK to pick location  ·  [Esc] to cancel"
-        )
-        lbl = ctk.CTkLabel(
-            container,
-            text=msg,
-            font=(FONT_FAMILY, 11, "bold"),
-            text_color=TEXT_MAIN
-        )
-        lbl.pack(side="left", padx=14, pady=6)
-
-        btn_cancel = ctk.CTkButton(
-            container,
-            text="✕",
-            width=26,
-            height=24,
-            font=(FONT_FAMILY, 11, "bold"),
-            fg_color="transparent",
-            hover_color=ACCENT_ALERT,
-            text_color=TEXT_MUTED,
-            corner_radius=RADIUS_CONTROL,
-            command=self.cancel_callback
-        )
-        btn_cancel.pack(side="right", padx=(0, 8), pady=6)
-
-
 class AutoClickerApp(ctk.CTk):
     """Main application window for AutoClicker."""
 
@@ -569,25 +513,28 @@ class AutoClickerApp(ctk.CTk):
                 c.jitter_enabled, c.jitter_interval_pct, c.jitter_position_px
             )
             self.macro_card.set_restore_cursor(c.restore_cursor)
-            self.macro_card.set_hotkey(c.macro_hotkey)
             self.macro_card.set_repeat(c.macro_repeat_mode, c.macro_repeat_count)
             self.macro_card.set_steps(c.macro_steps if c.macro_steps else [])
-            if hasattr(self, 'hotkey_entry') and self.hotkey_entry:
-                self.hotkey_entry.configure(state="normal")
-                self.hotkey_entry.delete(0, 'end')
-                self.hotkey_entry.insert(0, c.hotkey.upper().strip('<>'))
-                self.hotkey_entry.configure(state="readonly")
-            if hasattr(self, 'macro_hotkey_entry') and self.macro_hotkey_entry:
-                self.macro_hotkey_entry.configure(state="normal")
-                self.macro_hotkey_entry.delete(0, 'end')
-                self.macro_hotkey_entry.insert(0, c.macro_hotkey.upper().strip('<>'))
-                self.macro_hotkey_entry.configure(state="readonly")
-            if hasattr(self, 'hotkey_label') and self.hotkey_label:
-                self.hotkey_label.configure(text=f"[{c.hotkey.upper().strip('<>')}]")
-            if hasattr(self, 'start_button') and self.start_button:
-                self.start_button.configure(text=f"▶  {t('start_clicking').upper()} ({c.hotkey.upper().strip('<>')})")
+            self._refresh_hotkey_display()
         finally:
             self._is_loading_config = False
+
+    def _refresh_hotkey_display(self):
+        """Push config.hotkey / config.macro_hotkey into every widget that shows them."""
+        click_disp = self.config.hotkey.upper().strip('<>')
+        macro_disp = self.config.macro_hotkey.upper().strip('<>')
+        for entry, text in ((getattr(self, 'hotkey_entry', None), click_disp),
+                            (getattr(self, 'macro_hotkey_entry', None), macro_disp)):
+            if entry:
+                entry.configure(state="normal")
+                entry.delete(0, 'end')
+                entry.insert(0, text)
+                entry.configure(state="readonly")
+        if getattr(self, 'hotkey_label', None):
+            self.hotkey_label.configure(text=f"[{click_disp}]")
+        if getattr(self, 'start_button', None):
+            self.start_button.configure(text=f"▶  {t('start_clicking').upper()} ({click_disp})")
+        self.macro_card.set_hotkey(self.config.macro_hotkey)
 
     def _collect_config_from_ui(self) -> ClickerConfig:
         hrs, mins, secs, ms = self.interval_card.get_values()
@@ -822,6 +769,7 @@ class AutoClickerApp(ctk.CTk):
         try:
             from pynput import mouse, keyboard as kb
 
+            from ui.components.location_picker_banner import LocationPickerBanner
             self._picker_banner = LocationPickerBanner(self, self._cancel_pick_location)
 
             def on_click(x, y, button, pressed):
@@ -1117,21 +1065,9 @@ class AutoClickerApp(ctk.CTk):
 
         if target == "click":
             self.config.hotkey = captured_clean
-            self.hotkey_entry.configure(state="normal")
-            self.hotkey_entry.delete(0, 'end')
-            self.hotkey_entry.insert(0, captured_clean.upper().strip('<>'))
-            self.hotkey_entry.configure(state="readonly")
-            self.hotkey_label.configure(text=f"[{captured_clean.upper().strip('<>')}]")
-            self.start_button.configure(
-                text=f"▶  {t('start_clicking').upper()} ({captured_clean.upper().strip('<>')})"
-            )
         else:
             self.config.macro_hotkey = captured_clean
-            self.macro_hotkey_entry.configure(state="normal")
-            self.macro_hotkey_entry.delete(0, 'end')
-            self.macro_hotkey_entry.insert(0, captured_clean.upper().strip('<>'))
-            self.macro_hotkey_entry.configure(state="readonly")
-            self.macro_card.set_hotkey(captured_clean)
+        self._refresh_hotkey_display()
 
         self.hotkey_manager.update_hotkey(self.config.hotkey, self.config.macro_hotkey)
         self._save_current_session()
@@ -1169,12 +1105,7 @@ class AutoClickerApp(ctk.CTk):
         self.config.macro_hotkey = new_macro
 
         self.hotkey_manager.update_hotkey(self.config.hotkey, self.config.macro_hotkey)
-
-        self.hotkey_label.configure(text=f"[{self.config.hotkey.upper().strip('<>')}]")
-        self.start_button.configure(
-            text=f"▶  {t('start_clicking').upper()} ({self.config.hotkey.upper().strip('<>')})"
-        )
-        self.macro_card.set_hotkey(self.config.macro_hotkey)
+        self._refresh_hotkey_display()
 
         self._save_current_session()
 
@@ -1190,23 +1121,8 @@ class AutoClickerApp(ctk.CTk):
         self.config.hotkey = default_click
         self.config.macro_hotkey = default_macro
 
-        self.hotkey_entry.configure(state="normal")
-        self.hotkey_entry.delete(0, 'end')
-        self.hotkey_entry.insert(0, default_click.upper())
-        self.hotkey_entry.configure(state="readonly")
-
-        self.macro_hotkey_entry.configure(state="normal")
-        self.macro_hotkey_entry.delete(0, 'end')
-        self.macro_hotkey_entry.insert(0, default_macro.upper())
-        self.macro_hotkey_entry.configure(state="readonly")
-
         self.hotkey_manager.update_hotkey(self.config.hotkey, self.config.macro_hotkey)
-
-        self.hotkey_label.configure(text=f"[{default_click.upper()}]")
-        self.start_button.configure(
-            text=f"▶  {t('start_clicking').upper()} ({default_click.upper()})"
-        )
-        self.macro_card.set_hotkey(default_macro)
+        self._refresh_hotkey_display()
 
         self._save_current_session()
 
@@ -1221,26 +1137,35 @@ class AutoClickerApp(ctk.CTk):
         try:
             config = self._collect_config_from_ui()
             self.profile_manager.save_last_session(config)
-        except Exception:
-            pass
+        except Exception as e:
+            print(f"Save session error: {e}")
 
     # ─── Profile Management ────────────────────────────────────
 
     def _save_profile(self):
+        from tkinter import messagebox
         config = self._collect_config_from_ui()
         name = self.profile_card.get_selected_profile()
-        self.profile_manager.save_profile(name, config)
+        if not self.profile_manager.save_profile(name, config):
+            messagebox.showerror(t("save"), t("profile_save_failed"))
+            return
         self._current_profile_name = name
 
     def _save_profile_as(self):
+        from tkinter import messagebox
         dialog = ctk.CTkInputDialog(
             text=t("profile_name_prompt"), title=t("save_as")
         )
         name = dialog.get_input()
         if name and name.strip():
             name = name.strip()
+            if not self.profile_manager.is_valid_name(name):
+                messagebox.showerror(t("save_as"), t("invalid_profile_name"))
+                return
             config = self._collect_config_from_ui()
-            self.profile_manager.save_profile(name, config)
+            if not self.profile_manager.save_profile(name, config):
+                messagebox.showerror(t("save_as"), t("profile_save_failed"))
+                return
             self._current_profile_name = name
             profiles = self.profile_manager.list_profiles()
             self.profile_card.set_profiles(profiles, name)
@@ -1337,8 +1262,8 @@ class AutoClickerApp(ctk.CTk):
         try:
             config = self._collect_config_from_ui()
             self.profile_manager.save_last_session(config)
-        except Exception:
-            pass
+        except Exception as e:
+            print(f"Save session on close error: {e}")
 
         self.clicker_engine.stop()
         self.macro_engine.stop()

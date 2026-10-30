@@ -94,6 +94,8 @@ STRINGS = {
     "confirm_delete": "Are you sure you want to delete this profile?",
     "profile_name_prompt": "Enter profile name:",
     "profile_saved": "Profile saved successfully.",
+    "invalid_profile_name": "Invalid profile name. Avoid \\ / : * ? \" < > |, a leading \"_\" and reserved names like CON.",
+    "profile_save_failed": "Could not save the profile. Check the log file for details.",
     "profile_deleted": "Profile deleted.",
     "pick_location_instruction": "Move cursor to desired location and press Enter or right-click to select.",
     "restore_cursor": "Restore Cursor",
