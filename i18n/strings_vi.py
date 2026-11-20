@@ -22,6 +22,7 @@ STRINGS = {
     "middle": "Giữa",
     "single": "Đơn",
     "double": "Kép",
+    "hold_down": "Giữ chuột",
     "triple": "Ba",
     "mode": "Chế độ",
     "toggle": "Bật/Tắt",

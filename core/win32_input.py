@@ -72,6 +72,17 @@ def _precise_hold(duration_seconds: float):
     while time.perf_counter() < target:
         pass
 
+def send_button(button: str, down: bool) -> None:
+    """Presses (down=True) or releases a mouse button without the other half, for hold-to-drag."""
+    flags = {
+        'left': (MOUSEEVENTF_LEFTDOWN, MOUSEEVENTF_LEFTUP),
+        'right': (MOUSEEVENTF_RIGHTDOWN, MOUSEEVENTF_RIGHTUP),
+        'middle': (MOUSEEVENTF_MIDDLEDOWN, MOUSEEVENTF_MIDDLEUP),
+    }[button]
+    inp = INPUT(type=INPUT_MOUSE)
+    inp.union.mi = MOUSEINPUT(0, 0, 0, flags[0] if down else flags[1], 0, None)
+    ctypes.windll.user32.SendInput(1, (INPUT * 1)(inp), ctypes.sizeof(INPUT))
+
 def send_click(button: str = 'left', click_type: str = 'single', hold_ms: int = 0) -> None:
     """
     Sends mouse down and up events.

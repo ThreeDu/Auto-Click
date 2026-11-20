@@ -68,7 +68,7 @@ class OptionsCard(ctk.CTkFrame):
         self.type_menu = ctk.CTkOptionMenu(
             left_box,
             variable=self.type_var,
-            values=[t('single'), t('double'), t('triple')],
+            values=[t('single'), t('double'), t('triple'), t('hold_down')],
             width=105,
             height=28,
             font=(FONT_FAMILY, FONT_SIZE_BASE, "bold"),
@@ -137,6 +137,8 @@ class OptionsCard(ctk.CTkFrame):
             self._canonical_click_type = 'double'
         elif choice_lower in ('triple', 'ba'):
             self._canonical_click_type = 'triple'
+        elif choice == t('hold_down'):
+            self._canonical_click_type = 'hold_down'
         else:
             self._canonical_click_type = 'single'
 
@@ -165,7 +167,7 @@ class OptionsCard(ctk.CTkFrame):
 
     def set_values(self, button: str, click_type: str, mode: str) -> None:
         self._canonical_button = button if button in ('left', 'right', 'middle') else 'left'
-        self._canonical_click_type = click_type if click_type in ('single', 'double', 'triple') else 'single'
+        self._canonical_click_type = click_type if click_type in ('single', 'double', 'triple', 'hold_down') else 'single'
 
         self.btn_var.set(t(self._canonical_button))
         self.type_var.set(t(self._canonical_click_type))
@@ -176,7 +178,7 @@ class OptionsCard(ctk.CTkFrame):
         self.title_label.configure(text=t('options_title').upper())
         self.btn_menu.configure(values=[t('left'), t('right'), t('middle')])
         self.btn_menu.set(t(self._canonical_button))
-        self.type_menu.configure(values=[t('single'), t('double'), t('triple')])
+        self.type_menu.configure(values=[t('single'), t('double'), t('triple'), t('hold_down')])
         self.type_menu.set(t(self._canonical_click_type))
         self.mode_toggle.configure(text=t('toggle'))
         self.mode_hold.configure(text=t('hold'))

@@ -22,6 +22,7 @@ STRINGS = {
     "middle": "Middle",
     "single": "Single",
     "double": "Double",
+    "hold_down": "Hold down",
     "triple": "Triple",
     "mode": "Mode",
     "toggle": "Toggle",

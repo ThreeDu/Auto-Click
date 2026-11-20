@@ -97,11 +97,11 @@ def get_app_executable() -> tuple[str, list[str]]:
         return sys.executable, sys.argv[1:]
 
 
-def redirect_output_to_log(app_dir: str):
+def redirect_output_to_log(log_dir: str):
     """The windowed exe has no console, so send print()/tracebacks to autoclicker.log instead of losing them."""
     if globals().get("__compiled__") is None and sys.stdout is not None:
         return  # running from a terminal: keep console output
-    log_path = os.path.join(app_dir, 'autoclicker.log')
+    log_path = os.path.join(log_dir, 'autoclicker.log')
     try:
         # Start fresh once the log passes 1 MB so it can't grow forever
         mode = 'w' if os.path.exists(log_path) and os.path.getsize(log_path) > 1_000_000 else 'a'
@@ -193,8 +193,6 @@ def main():
     if app_dir not in sys.path:
         sys.path.insert(0, app_dir)
 
-    redirect_output_to_log(app_dir)
-
     # Import after path setup
     from config import ClickerConfig
     from profile_manager import ProfileManager
@@ -208,6 +206,7 @@ def main():
     # Setup profiles directory
     profiles_dir = os.path.join(app_dir, 'profiles')
     profile_manager = ProfileManager(profiles_dir)
+    redirect_output_to_log(profile_manager.profiles_dir)
 
     # Load last session or defaults
     config = profile_manager.load_last_session()

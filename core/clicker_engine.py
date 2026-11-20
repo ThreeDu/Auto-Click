@@ -6,7 +6,7 @@ import time
 import random
 from typing import Optional, Callable
 
-from .win32_input import send_click, move_cursor, get_cursor_pos
+from .win32_input import send_click, send_button, move_cursor, get_cursor_pos
 from .timer import setup_timer_resolution, restore_timer_resolution, high_precision_sleep
 
 class ClickerEngine:
@@ -65,6 +65,17 @@ class ClickerEngine:
         """Main click loop with drift-compensated timing."""
         setup_timer_resolution()
         try:
+            if self.click_type == 'hold_down':
+                # Keep the button pressed until stopped, so the user can drag windows/files
+                if self.fixed_position:
+                    move_cursor(*self.fixed_position)
+                send_button(self.button, True)
+                try:
+                    self._stop_event.wait()
+                finally:
+                    send_button(self.button, False)
+                return
+
             next_click_time = time.perf_counter()
             while not self._stop_event.is_set():
                 # Position

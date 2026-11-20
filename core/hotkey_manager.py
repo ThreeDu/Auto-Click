@@ -96,26 +96,36 @@ class HotkeyManager:
             elif self.mode == 'hold':
                 # Parse into canonical keys so combos like ctrl+shift+a work, not just single keys
                 target = set(keyboard.HotKey.parse(normalize_hotkey(self.hotkey)))
+                norm_macro = normalize_hotkey(self.macro_hotkey)
+                # The macro key stays a toggle in hold mode
+                macro_target = set(keyboard.HotKey.parse(norm_macro)) if norm_macro else set()
                 pressed = set()
                 active = False
+                macro_down = False
 
                 def on_press(key):
-                    nonlocal active
+                    nonlocal active, macro_down
                     try:
                         pressed.add(self._listener.canonical(key))
-                        # Key auto-repeat fires on_press repeatedly; only start once per hold
+                        # Key auto-repeat fires on_press repeatedly; only fire once per press
                         if not active and target <= pressed:
                             active = True
                             if self.on_hold_start:
                                 self.on_hold_start()
+                        if macro_target and not macro_down and macro_target <= pressed:
+                            macro_down = True
+                            if self.on_macro_toggle:
+                                self.on_macro_toggle()
                     except Exception:
                         pass
 
                 def on_release(key):
-                    nonlocal active
+                    nonlocal active, macro_down
                     try:
                         k = self._listener.canonical(key)
                         pressed.discard(k)
+                        if k in macro_target:
+                            macro_down = False
                         if active and k in target:
                             active = False
                             if self.on_hold_stop:

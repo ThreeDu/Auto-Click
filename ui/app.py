@@ -1177,6 +1177,7 @@ class AutoClickerApp(ctk.CTk):
             self.config = config
             self._current_profile_name = name
             self._load_config_to_ui()
+            self._setup_hotkeys()  # the profile may have a different mode or keys
         except Exception as e:
             print(f"Failed to load profile: {e}")
 

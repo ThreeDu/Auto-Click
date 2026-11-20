@@ -53,3 +53,6 @@ Desktop.ini
 # App runtime & User data
 profiles/*.json
 !profiles/.gitkeep
+
+# Claude Code project notes (local only)
+CLAUDE.md
