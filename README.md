@@ -27,14 +27,18 @@ Phần mềm Auto Click và Macro.
 
 ### 1. Dùng trực tiếp (Khuyên dùng)
 Chạy trực tiếp file:
-👉 **`AutoClicker.exe`** (dùng ngay, không cần cài đặt Python hay phần mềm phụ trợ).
+👉 **`AutoClicker.exe`** (dùng ngay, không cần cài đặt gì thêm). Cài đặt và hồ sơ được lưu trong thư mục `profiles/` cạnh file exe.
 
-### 2. Chạy từ mã nguồn Python
+### 2. Build từ mã nguồn (Rust)
+Cần cài [Rust](https://rustup.rs) (toolchain MSVC).
 ```bash
-pip install -r requirements.txt
-python main.py
+cd rust
+cargo build --release
 ```
+File exe nằm ở `rust/target/release/autoclicker.exe`; copy ra thư mục gốc và đổi tên thành `AutoClicker.exe` để dùng chung thư mục `profiles/`.
 
-### 3. Đóng gói lại file `.exe`
-Chạy file script có sẵn:
-👉 **`build_nuitka.bat`**
+### 3. Chạy test
+```bash
+cd rust
+cargo test
+```
