@@ -32,13 +32,11 @@ Chạy trực tiếp file:
 ### 2. Build từ mã nguồn (Rust)
 Cần cài [Rust](https://rustup.rs) (toolchain MSVC).
 ```bash
-cd rust
 cargo build --release
 ```
-File exe nằm ở `rust/target/release/autoclicker.exe`; copy ra thư mục gốc và đổi tên thành `AutoClicker.exe` để dùng chung thư mục `profiles/`.
+File exe nằm ở `target/release/autoclicker.exe`; copy ra thư mục gốc và đổi tên thành `AutoClicker.exe` để dùng chung thư mục `profiles/`.
 
 ### 3. Chạy test
 ```bash
-cd rust
 cargo test
 ```

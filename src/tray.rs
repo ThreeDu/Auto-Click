@@ -12,7 +12,7 @@ pub struct Tray {
 }
 
 pub fn icon_rgba(size: u32) -> Option<(Vec<u8>, u32, u32)> {
-    let img = image::load_from_memory(include_bytes!("../../assets/icon.png")).ok()?.thumbnail(size, size).to_rgba8();
+    let img = image::load_from_memory(include_bytes!("../assets/icon.png")).ok()?.thumbnail(size, size).to_rgba8();
     let (w, h) = img.dimensions();
     Some((img.into_raw(), w, h))
 }

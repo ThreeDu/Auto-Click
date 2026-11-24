@@ -228,7 +228,7 @@ mod tests {
     #[test]
     fn real_profiles_round_trip() {
         // Every profile the user already has must load with no field lost
-        let dir = Path::new(env!("CARGO_MANIFEST_DIR")).join("../profiles");
+        let dir = Path::new(env!("CARGO_MANIFEST_DIR")).join("profiles");
         for entry in fs::read_dir(dir).into_iter().flatten().flatten() {
             let path = entry.path();
             if path.extension().is_some_and(|e| e == "json") {
